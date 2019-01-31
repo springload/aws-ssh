@@ -23,4 +23,5 @@ brew:
     owner: springload
     name: homebrew-tools
   folder: Formula
+  download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
 
