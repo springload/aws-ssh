@@ -1,0 +1,5 @@
+.envrc
+aws-ssh
+*.log
+dist/
+vendor/
