@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/apex/log"
@@ -123,7 +124,7 @@ func Reconf(profiles []string, filename string) {
 		}
 	}
 
-	tmpfile, err := ioutil.TempFile("", "aws-ssh")
+	tmpfile, err := ioutil.TempFile(path.Dir(filename), "aws-ssh")
 	ctx := log.WithField("tmpfile", tmpfile.Name())
 	if err != nil {
 		ctx.WithError(err).Fatal("Couldn't create a temporary file")
