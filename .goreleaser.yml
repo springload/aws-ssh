@@ -23,4 +23,8 @@ brew:
     owner: springload
     name: homebrew-tools
   folder: Formula
+  # Allows you to set a custom download strategy.
+  download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+  # Allows you to add a custom require_relative at the top of the formula template
+  custom_require: "../custom_download_strategy"
 
