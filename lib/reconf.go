@@ -22,7 +22,7 @@ type SSHEntry struct {
 
 func (e SSHEntry) ConfigFormat() string {
 	var output = []string{
-		fmt.Sprintf("Host %s", e.Name),
+		fmt.Sprintf("Host %s %s", e.Name, e.Address),
 	}
 	if e.ProxyJump != "" {
 		output = append(output, fmt.Sprintf("    ProxyJump %s", e.ProxyJump))
