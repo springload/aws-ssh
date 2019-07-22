@@ -15,6 +15,7 @@ import (
 )
 
 type SSHEntry struct {
+	Profile,
 	Name,
 	Address,
 	ProxyJump string
@@ -22,7 +23,7 @@ type SSHEntry struct {
 
 func (e SSHEntry) ConfigFormat() string {
 	var output = []string{
-		fmt.Sprintf("Host %s %s", e.Name, e.Address),
+		fmt.Sprintf("Host %s %s.%s", e.Name, e.Address, e.Profile),
 	}
 	if e.ProxyJump != "" {
 		output = append(output, fmt.Sprintf("    ProxyJump %s", e.ProxyJump))
@@ -103,7 +104,7 @@ func Reconf(profiles []string, filename string) {
 
 				for n, instance := range nameGroup.Group {
 					instance := instance.(*ec2.Instance)
-					var entry = SSHEntry{Name: getInstanceCanonicalName(summary.Name, instanceName, fmt.Sprintf("%d", n+1))}
+					var entry = SSHEntry{Name: getInstanceCanonicalName(summary.Name, instanceName, fmt.Sprintf("%d", n+1)), Profile: summary.Name}
 
 					// first try to find a bastion from this vpc
 					bastion := findBestBastion(instanceName, vpcBastions)
