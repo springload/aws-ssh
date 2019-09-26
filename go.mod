@@ -5,7 +5,7 @@ require (
 	github.com/apex/log v1.1.0
 	github.com/aws/aws-sdk-go v1.16.26
 	github.com/fatih/color v1.7.0 // indirect
-	github.com/go-ini/ini v1.41.0
+	github.com/go-ini/ini v1.48.0
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
