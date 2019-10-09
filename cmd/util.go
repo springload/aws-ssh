@@ -52,7 +52,7 @@ func getProfiles() ([]string, error) {
 	// convert the map to a list
 	var profilesList []string
 
-	for profile, _ := range profiles {
+	for profile := range profiles {
 		profilesList = append(profilesList, profile)
 	}
 	return profilesList, nil

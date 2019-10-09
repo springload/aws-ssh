@@ -71,18 +71,18 @@ func findBestBastion(instanceName string, bastions []*ec2.Instance) *ec2.Instanc
 	if !strings.Contains(instanceName, bastionCanonicalName) && len(bastions) > 0 {
 		if len(bastions) == 1 {
 			return bastions[0]
-		} else {
-			var weights weights
-			for n, bastion := range bastions {
-				bastionName := getNameFromTags(bastion.Tags)
-				weight := len(lcs(instanceName, bastionName))
-				weights = append(weights, weightType{Index: n, Weight: weight})
-			}
-			// sort by weiht
-			sort.Sort(weights)
-			// return the first one
-			return bastions[weights[0].Index]
 		}
+
+		var weights weights
+		for n, bastion := range bastions {
+			bastionName := getNameFromTags(bastion.Tags)
+			weight := len(lcs(instanceName, bastionName))
+			weights = append(weights, weightType{Index: n, Weight: weight})
+		}
+		// sort by weiht
+		sort.Sort(weights)
+		// return the first one
+		return bastions[weights[0].Index]
 	}
 
 	return nil

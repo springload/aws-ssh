@@ -26,6 +26,7 @@ Any comments and especially pull requests are highly appreciated.
 `,
 }
 
+// Execute is a wrapper for rootCmd.Execute to add the version at compilation time
 func Execute(version string) {
 	rootCmd.Version = version
 	if err := rootCmd.Execute(); err != nil {
