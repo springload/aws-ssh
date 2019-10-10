@@ -14,6 +14,7 @@ import (
 	linq "gopkg.in/ahmetb/go-linq.v3"
 )
 
+// SSHEntry represents an entry in ssh config
 type SSHEntry struct {
 	Profile,
 	Name,
@@ -21,6 +22,7 @@ type SSHEntry struct {
 	ProxyJump string
 }
 
+// ConfigFormat returns formatted and stringified SSHEntry ready to use in ssh config
 func (e SSHEntry) ConfigFormat() string {
 	var output = []string{
 		fmt.Sprintf("Host %s %s.%s", e.Name, e.Address, e.Profile),
@@ -43,6 +45,7 @@ func instanceNameSorter(i interface{}) interface{} { // sort by instance name
 	return instanceName
 }
 
+// Reconf writes ssh config with profiles into the specified file
 func Reconf(profiles []string, filename string) {
 	profileSummaries, err := TraverseProfiles(profiles)
 	if err != nil {
@@ -63,8 +66,8 @@ func Reconf(profiles []string, filename string) {
 		linq.From(summary.Instances).OrderBy(instanceNameSorter). // sort by name first
 										ThenBy(instanceLaunchTimeSorter).         // then by launch time
 										GroupBy(func(i interface{}) interface{} { // and then group by vpc
-				vpcId := i.(*ec2.Instance).VpcId
-				return aws.StringValue(vpcId)
+				vpcID := i.(*ec2.Instance).VpcId
+				return aws.StringValue(vpcID)
 			}, func(i interface{}) interface{} {
 				return i.(*ec2.Instance)
 			}).ToSlice(&vpcInstances)

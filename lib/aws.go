@@ -12,7 +12,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 )
 
-// Provides profile summary
+// ProfileSummary represents profile summary
 type ProfileSummary struct {
 	sync.Mutex
 
@@ -31,11 +31,12 @@ func makeSession(profile string) (*session.Session, error) {
 		Profile:           profile,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Can't get aws session.")
+		return nil, fmt.Errorf("can't get aws session")
 	}
 	return localSession, nil
 }
 
+// TraverseProfiles goes through all profiles and returns a list of ProfileSummary
 func TraverseProfiles(profiles []string) ([]ProfileSummary, error) {
 	log.Debugf("Traversing through %d profiles", len(profiles))
 	var profileSummaryChan = make(chan ProfileSummary, len(profiles))
@@ -64,6 +65,7 @@ func TraverseProfiles(profiles []string) ([]ProfileSummary, error) {
 	return profileSummaries, errors
 }
 
+// DescribeProfile describes the specified profile
 func DescribeProfile(profile string, sum chan ProfileSummary, errChan chan error) {
 	awsSession, err := makeSession(profile)
 	if err != nil {
@@ -79,7 +81,7 @@ func DescribeProfile(profile string, sum chan ProfileSummary, errChan chan error
 	svc := ec2.New(awsSession)
 	input := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
-			&ec2.Filter{
+			{
 				Name:   aws.String("instance-state-name"),
 				Values: aws.StringSlice([]string{ec2.InstanceStateNameRunning}),
 			},
