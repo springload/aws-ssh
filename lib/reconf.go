@@ -16,16 +16,17 @@ import (
 
 // SSHEntry represents an entry in ssh config
 type SSHEntry struct {
-	Profile,
-	Name,
 	Address,
-	ProxyJump string
+	InstanceID,
+	Name,
+	ProxyJump,
+	Profile string
 }
 
 // ConfigFormat returns formatted and stringified SSHEntry ready to use in ssh config
 func (e SSHEntry) ConfigFormat() string {
 	var output = []string{
-		fmt.Sprintf("Host %s %s.%s", e.Name, e.Address, e.Profile),
+		fmt.Sprintf("Host %s %s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile),
 	}
 	if e.ProxyJump != "" {
 		output = append(output, fmt.Sprintf("    ProxyJump %s", e.ProxyJump))
@@ -107,7 +108,11 @@ func Reconf(profiles []string, filename string) {
 
 				for n, instance := range nameGroup.Group {
 					instance := instance.(*ec2.Instance)
-					var entry = SSHEntry{Name: getInstanceCanonicalName(summary.Name, instanceName, fmt.Sprintf("%d", n+1)), Profile: summary.Name}
+					var entry = SSHEntry{
+						InstanceID: aws.StringValue(instance.InstanceId),
+						Name:       getInstanceCanonicalName(summary.Name, instanceName, fmt.Sprintf("%d", n+1)),
+						Profile:    summary.Name,
+					}
 
 					// first try to find a bastion from this vpc
 					bastion := findBestBastion(instanceName, vpcBastions)
