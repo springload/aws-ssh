@@ -36,7 +36,7 @@ func Execute(version string) {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initSettings)
 
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show debug output")
 	rootCmd.PersistentFlags().StringSliceP("profile", "p", []string{}, "Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/config and ~/.aws/credentials")
@@ -45,12 +45,15 @@ func init() {
 	viper.BindPFlag("profiles", rootCmd.PersistentFlags().Lookup("profile"))
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
+func initSettings() {
 	log.SetHandler(cli.New(os.Stdout))
 	if viper.GetBool("debug") {
 		log.SetLevel(log.DebugLevel)
 	}
+}
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() {
 	if len(viper.GetStringSlice("profiles")) == 0 {
 		profiles, err := getProfiles()
 		if err != nil {

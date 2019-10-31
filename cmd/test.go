@@ -16,6 +16,9 @@ var testCmd = &cobra.Command{
 
 Allows to identify permission issues early.
 `,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		summaries, err := lib.TraverseProfiles(viper.GetStringSlice("profiles"))
 		if err != nil {

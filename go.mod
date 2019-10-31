@@ -3,7 +3,7 @@ module aws-ssh
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/apex/log v1.1.0
-	github.com/aws/aws-sdk-go v1.16.26
+	github.com/aws/aws-sdk-go v1.25.23
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/go-ini/ini v1.48.0
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
@@ -18,6 +18,7 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
+	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
 	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3 // indirect
 	gopkg.in/ahmetb/go-linq.v3 v3.0.0
 	gopkg.in/ini.v1 v1.41.0 // indirect
