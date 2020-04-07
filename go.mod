@@ -23,3 +23,5 @@ require (
 	gopkg.in/ahmetb/go-linq.v3 v3.0.0
 	gopkg.in/ini.v1 v1.41.0 // indirect
 )
+
+go 1.13

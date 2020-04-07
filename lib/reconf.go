@@ -20,6 +20,7 @@ type SSHEntry struct {
 	InstanceID,
 	Name,
 	ProxyJump,
+	User,
 	Profile string
 }
 
@@ -27,6 +28,9 @@ type SSHEntry struct {
 func (e SSHEntry) ConfigFormat() string {
 	var output = []string{
 		fmt.Sprintf("Host %s %s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile),
+	}
+	if e.User != "" {
+		output = append(output, fmt.Sprintf("    User %s", e.User))
 	}
 	if e.ProxyJump != "" {
 		output = append(output, fmt.Sprintf("    ProxyJump %s", e.ProxyJump))
@@ -121,12 +125,18 @@ func Reconf(profiles []string, filename string) {
 					}
 					entry.Address = aws.StringValue(instance.PrivateIpAddress) // get the private address first as we always have one
 					if bastion != nil {                                        // get private address and add proxyhost, which is the bastion ip
-						entry.ProxyJump = aws.StringValue(bastion.PublicIpAddress)
+						bastionUser := getTagValue("x-aws-ssh-user", bastion.Tags)
+						if bastionUser != "" {
+							entry.ProxyJump = fmt.Sprintf("%s@%s", bastionUser, aws.StringValue(bastion.PublicIpAddress))
+						} else {
+							entry.ProxyJump = aws.StringValue(bastion.PublicIpAddress)
+						}
 					} else { // get public IP if we have one
 						if publicIP := aws.StringValue(instance.PublicIpAddress); publicIP != "" {
 							entry.Address = aws.StringValue(instance.PublicIpAddress)
 						}
 					}
+					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
 					sshEntries = append(sshEntries, entry)
 				}
 			}

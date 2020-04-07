@@ -13,16 +13,24 @@ const bastionCanonicalName = "bastion"
 
 var sanitiser = regexp.MustCompile("[\\s-]+")
 
-func getNameFromTags(tags []*ec2.Tag) string {
-	if len(tags) > 0 {
-		for _, tag := range tags {
-			if aws.StringValue(tag.Key) == "Name" {
-				return strings.ToLower(aws.StringValue(tag.Value))
-			}
+func getTagValue(tag string, tags []*ec2.Tag, caseInsensitive ...bool) string {
+	if len(caseInsensitive) > 0 {
+		if caseInsensitive[0] {
+			tag = strings.ToLower(tag)
+		}
+	}
+
+	for _, subTag := range tags {
+		if aws.StringValue(subTag.Key) == tag {
+			return aws.StringValue(subTag.Value)
 		}
 	}
 
 	return ""
+
+}
+func getNameFromTags(tags []*ec2.Tag) string {
+	return strings.ToLower(getTagValue("Name", tags))
 }
 
 func isBastionFromTags(tags []*ec2.Tag, checkGlobal bool) bool {
@@ -34,7 +42,7 @@ func isBastionFromTags(tags []*ec2.Tag, checkGlobal bool) bool {
 			switch aws.StringValue(tag.Key) {
 			case "Name":
 				name = strings.ToLower(aws.StringValue(tag.Value))
-			case "Global":
+			case "Global", "x-aws-ssh-global":
 				{
 					value := strings.ToLower(aws.StringValue(tag.Value))
 					if value == "yes" || value == "true" || value == "1" {

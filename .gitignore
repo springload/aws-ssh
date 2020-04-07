@@ -3,3 +3,4 @@ aws-ssh
 *.log
 dist/
 vendor/
+*.swp
