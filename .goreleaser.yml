@@ -23,3 +23,14 @@ brews:
       owner: springload
       name: homebrew-tools
     folder: Formula
+
+snapcrafts:
+  - name: springload-aws-ssh
+    publish: true
+    summary: Traverses through all AWS in parallel to construct ssh config
+    description: This utility traverses through all AWS in parallel to construct ssh config. It does all profiles in parallel, so it's pretty fast.
+    grade: stable
+    apps:
+      aws-ssh:
+        plugs: ["home","networks"]
+
