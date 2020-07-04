@@ -20,6 +20,7 @@ type SSHEntry struct {
 	InstanceID,
 	Name,
 	ProxyJump,
+	Port,
 	User,
 	Profile string
 }
@@ -34,6 +35,9 @@ func (e SSHEntry) ConfigFormat() string {
 	}
 	if e.ProxyJump != "" {
 		output = append(output, fmt.Sprintf("    ProxyJump %s", e.ProxyJump))
+	}
+	if e.Port != "" {
+		output = append(output, fmt.Sprintf("    Port %s", e.Port))
 	}
 	output = append(output, fmt.Sprintf("    Hostname %s", e.Address), "\n")
 
@@ -137,6 +141,7 @@ func Reconf(profiles []string, filename string) {
 						}
 					}
 					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
+					entry.Port = getTagValue("x-aws-ssh-port", instance.Tags)
 					sshEntries = append(sshEntries, entry)
 				}
 			}

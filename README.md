@@ -9,6 +9,7 @@ There are the following EC2 instance tags that change behaviour:
 1. (Deprecated) If a bastion instance has tag "Global" with value "yes", "true" or "1", then aws-ssh will use it for all VPCs. If there are multiple bastion instances, it chooses the instance that has the most common match in name.
 2. "x-aws-ssh-global" - same as the above
 3. "x-aws-ssh-user" - sets the ssh username in the config.
+3. "x-aws-ssh-port" - sets the ssh port in the config.
 
 Any comments and especially pull requests are highly appreciated.
 
