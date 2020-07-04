@@ -137,10 +137,13 @@ func Reconf(profiles []string, filename string, noProfilePrefix bool) {
 					entry.Address = aws.StringValue(instance.PrivateIpAddress) // get the private address first as we always have one
 					if bastion != nil {                                        // get private address and add proxyhost, which is the bastion ip
 						bastionUser := getTagValue("x-aws-ssh-user", bastion.Tags)
+						bastionPort := getTagValue("x-aws-ssh-port", bastion.Tags)
+						entry.ProxyJump = aws.StringValue(bastion.PublicIpAddress)
 						if bastionUser != "" {
-							entry.ProxyJump = fmt.Sprintf("%s@%s", bastionUser, aws.StringValue(bastion.PublicIpAddress))
-						} else {
-							entry.ProxyJump = aws.StringValue(bastion.PublicIpAddress)
+							entry.ProxyJump = fmt.Sprintf("%s@%s", bastionUser, entry.ProxyJump)
+						}
+						if bastionPort != "" {
+							entry.ProxyJump = fmt.Sprintf("%s:%s", entry.ProxyJump, bastionPort)
 						}
 					} else { // get public IP if we have one
 						if publicIP := aws.StringValue(instance.PublicIpAddress); publicIP != "" {
