@@ -101,7 +101,11 @@ func getInstanceCanonicalName(profile, instanceName, instanceIndex string) strin
 	if !strings.HasPrefix(instanceName, profile) {
 		parts = append(parts, profile)
 	}
-	parts = append(parts, instanceName, instanceIndex)
+	parts = append(parts, instanceName)
+
+	if instanceIndex != "" {
+		parts = append(parts, instanceIndex)
+	}
 
 	return sanitiser.ReplaceAllString(strings.Join(parts, "-"), "-")
 }
