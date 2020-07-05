@@ -17,10 +17,13 @@ which is a filename. In case of any errors, the preexisting file won't be touche
 		initConfig()
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		lib.Reconf(viper.GetStringSlice("profiles"), args[0])
+		lib.Reconf(viper.GetStringSlice("profiles"), args[0], viper.GetBool("no-profile-prefix"))
 	},
 }
 
 func init() {
+	reconfCmd.Flags().BoolP("no-profile-prefix", "n", false, "Do not prefix host names with profile name")
+
+	viper.BindPFlag("no-profile-prefix", reconfCmd.Flags().Lookup("no-profile-prefix"))
 	rootCmd.AddCommand(reconfCmd)
 }

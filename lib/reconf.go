@@ -55,7 +55,7 @@ func instanceNameSorter(i interface{}) interface{} { // sort by instance name
 }
 
 // Reconf writes ssh config with profiles into the specified file
-func Reconf(profiles []string, filename string) {
+func Reconf(profiles []string, filename string, noProfilePrefix bool) {
 	profileSummaries, err := TraverseProfiles(profiles)
 	if err != nil {
 		log.WithError(err).Error("got some errors")
@@ -124,6 +124,9 @@ func Reconf(profiles []string, filename string) {
 						InstanceID: aws.StringValue(instance.InstanceId),
 						Name:       getInstanceCanonicalName(summary.Name, instanceName, instanceIndex),
 						Profile:    summary.Name,
+					}
+					if noProfilePrefix {
+						entry.Name = getInstanceCanonicalName("", instanceName, instanceIndex)
 					}
 
 					// first try to find a bastion from this vpc
