@@ -116,9 +116,13 @@ func Reconf(profiles []string, filename string) {
 
 				for n, instance := range nameGroup.Group {
 					instance := instance.(*ec2.Instance)
+					var instanceIndex string
+					if len(nameGroup.Group) > 1 {
+						instanceIndex = fmt.Sprintf("%d", n+1)
+					}
 					var entry = SSHEntry{
 						InstanceID: aws.StringValue(instance.InstanceId),
-						Name:       getInstanceCanonicalName(summary.Name, instanceName, fmt.Sprintf("%d", n+1)),
+						Name:       getInstanceCanonicalName(summary.Name, instanceName, instanceIndex),
 						Profile:    summary.Name,
 					}
 
