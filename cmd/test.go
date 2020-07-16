@@ -20,7 +20,8 @@ Allows to identify permission issues early.
 		initConfig()
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		summaries, err := lib.TraverseProfiles(viper.GetStringSlice("profiles"))
+		profiles := viper.Get("profilesConfig").([]lib.ProfileConfig)
+		summaries, err := lib.TraverseProfiles(profiles)
 		if err != nil {
 			log.WithError(err).Fatal("Can't traverse through all profiles")
 		} else {

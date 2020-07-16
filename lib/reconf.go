@@ -14,6 +14,12 @@ import (
 	linq "gopkg.in/ahmetb/go-linq.v3"
 )
 
+// ProfileConfig represents an entry in aws config
+type ProfileConfig struct {
+	Name,
+	Domain string
+}
+
 // SSHEntry represents an entry in ssh config
 type SSHEntry struct {
 	Address,
@@ -22,14 +28,20 @@ type SSHEntry struct {
 	ProxyJump,
 	Port,
 	User,
-	Profile string
+	Profile,
+	Domain string
 }
 
 // ConfigFormat returns formatted and stringified SSHEntry ready to use in ssh config
 func (e SSHEntry) ConfigFormat() string {
-	var output = []string{
-		fmt.Sprintf("Host %s %s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile),
+	var output = []string{}
+
+	if e.Domain != "" {
+		output = append(output, fmt.Sprintf("Host %s %s %s.%s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile, e.Name, e.Domain))
+	} else {
+		output = append(output, fmt.Sprintf("Host %s %s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile))
 	}
+
 	if e.User != "" {
 		output = append(output, fmt.Sprintf("    User %s", e.User))
 	}
@@ -55,7 +67,7 @@ func instanceNameSorter(i interface{}) interface{} { // sort by instance name
 }
 
 // Reconf writes ssh config with profiles into the specified file
-func Reconf(profiles []string, filename string, noProfilePrefix bool) {
+func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 	profileSummaries, err := TraverseProfiles(profiles)
 	if err != nil {
 		log.WithError(err).Error("got some errors")
@@ -124,6 +136,7 @@ func Reconf(profiles []string, filename string, noProfilePrefix bool) {
 						InstanceID: aws.StringValue(instance.InstanceId),
 						Name:       getInstanceCanonicalName(summary.Name, instanceName, instanceIndex),
 						Profile:    summary.Name,
+						Domain:     summary.Domain,
 					}
 					if noProfilePrefix {
 						entry.Name = getInstanceCanonicalName("", instanceName, instanceIndex)
