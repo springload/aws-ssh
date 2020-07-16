@@ -19,6 +19,7 @@ type ProfileSummary struct {
 	Name      string
 	Region    string
 	Instances []*ec2.Instance
+	Domain    string
 }
 
 func makeSession(profile string) (*session.Session, error) {
@@ -37,14 +38,14 @@ func makeSession(profile string) (*session.Session, error) {
 }
 
 // TraverseProfiles goes through all profiles and returns a list of ProfileSummary
-func TraverseProfiles(profiles []string) ([]ProfileSummary, error) {
+func TraverseProfiles(profiles []ProfileConfig) ([]ProfileSummary, error) {
 	log.Debugf("Traversing through %d profiles", len(profiles))
 	var profileSummaryChan = make(chan ProfileSummary, len(profiles))
 	var errChan = make(chan error, len(profiles))
 
 	var profileSummaries []ProfileSummary
 	for _, profile := range profiles {
-		go func(profile string) {
+		go func(profile ProfileConfig) {
 			DescribeProfile(profile, profileSummaryChan, errChan)
 		}(profile)
 	}
@@ -66,16 +67,17 @@ func TraverseProfiles(profiles []string) ([]ProfileSummary, error) {
 }
 
 // DescribeProfile describes the specified profile
-func DescribeProfile(profile string, sum chan ProfileSummary, errChan chan error) {
-	awsSession, err := makeSession(profile)
+func DescribeProfile(profile ProfileConfig, sum chan ProfileSummary, errChan chan error) {
+	awsSession, err := makeSession(profile.Name)
 	if err != nil {
-		errChan <- fmt.Errorf("Couldn't create session for '%s': %s", profile, err)
+		errChan <- fmt.Errorf("Couldn't create session for '%s': %s", profile.Name, err)
 		return
 	}
 
 	profileSummary := ProfileSummary{
-		Name:   profile,
+		Name:   profile.Name,
 		Region: aws.StringValue(awsSession.Config.Region),
+		Domain: profile.Domain,
 	}
 
 	svc := ec2.New(awsSession)

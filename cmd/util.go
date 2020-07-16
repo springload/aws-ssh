@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"aws-ssh/lib"
 	"os"
 	"path"
 	"strings"
@@ -11,13 +12,13 @@ import (
 )
 
 // gets profiles. The current Go AWS SDK doesn't have this function, whereas python boto3 has it. Why?
-func getProfiles() ([]string, error) {
+func getProfiles() ([]lib.ProfileConfig, error) {
 	// use a map here to get rid of duplicates
-	var profiles = make(map[string]struct{})
+	var profiles = make(map[string]lib.ProfileConfig)
 
 	home, err := homedir.Dir()
 	if err != nil {
-		return []string{}, err
+		return []lib.ProfileConfig{}, err
 	}
 
 	loadFile := func(envVariableName, defaultFileName, sectionPrefix string) error {
@@ -30,13 +31,24 @@ func getProfiles() ([]string, error) {
 			return err
 		}
 
-		for _, section := range config.SectionStrings() {
+		for _, section := range config.Sections() {
+			name := section.Name()
 			// skip the default section (top level keys/values)
-			if section == ini.DefaultSection {
+			if name == ini.DefaultSection {
 				continue
 			}
-			if strings.HasPrefix(section, sectionPrefix) {
-				profiles[section[len(sectionPrefix):]] = struct{}{}
+			if strings.HasPrefix(name, sectionPrefix) {
+				name = name[len(sectionPrefix):]
+				if _, exists := profiles[name]; !exists {
+					config := lib.ProfileConfig{Name: name}
+					if section.HasKey("aws-ssh-domain") {
+						config.Domain = section.Key("aws-ssh-domain").Value()
+					}
+					log.Debugf("Got profile - %s", name)
+					profiles[name] = config
+				} else {
+					log.Debugf("Skipping duplicate profile - %s", name)
+				}
 			}
 		}
 		return nil
@@ -50,10 +62,19 @@ func getProfiles() ([]string, error) {
 	}
 
 	// convert the map to a list
-	var profilesList []string
+	profilesList := make([]lib.ProfileConfig, 0, len(profiles))
 
-	for profile := range profiles {
+	for _, profile := range profiles {
 		profilesList = append(profilesList, profile)
 	}
 	return profilesList, nil
+}
+
+func contains(slice []string, element string) bool {
+	for _, item := range slice {
+		if item == element {
+			return true
+		}
+	}
+	return false
 }

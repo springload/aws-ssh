@@ -17,7 +17,7 @@ which is a filename. In case of any errors, the preexisting file won't be touche
 		initConfig()
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		lib.Reconf(viper.GetStringSlice("profiles"), args[0], viper.GetBool("no-profile-prefix"))
+		lib.Reconf(viper.Get("profilesConfig").([]lib.ProfileConfig), args[0], viper.GetBool("no-profile-prefix"))
 	},
 }
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"aws-ssh/lib"
 	"fmt"
 	"os"
 
@@ -54,11 +55,20 @@ func initSettings() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	profiles, err := getProfiles()
+	if err != nil {
+		log.WithError(err).Fatal("Profiles have not been provided and couldn't retrieve them from the config")
+	}
 	if len(viper.GetStringSlice("profiles")) == 0 {
-		profiles, err := getProfiles()
-		if err != nil {
-			log.WithError(err).Fatal("Profiles have not been provided and couldn't retrieve them from the config")
+		viper.Set("profilesConfig", profiles)
+	} else {
+		specifiedProfiles := viper.GetStringSlice("profiles")
+		filteredProfiles := make([]lib.ProfileConfig, 0, len(specifiedProfiles))
+		for _, profile := range profiles {
+			if contains(specifiedProfiles, profile.Name) {
+				filteredProfiles = append(filteredProfiles, profile)
+			}
 		}
-		viper.Set("profiles", profiles)
+		viper.Set("profilesConfig", filteredProfiles)
 	}
 }
