@@ -36,6 +36,10 @@ func ConnectEC2(profile, instanceID, instanceUser string, args []string) {
 		log.WithError(err).Fatal("can't get ec2 instance")
 	}
 
+	if len(ec2Result.Reservations) == 0 || len(ec2Result.Reservations[0].Instances) == 0 {
+		log.WithField("instance_id", instanceID).Fatal("Couldn't find the instance")
+	}
+
 	ec2Instance := ec2Result.Reservations[0].Instances[0]
 	ec2ICSvc := ec2instanceconnect.New(localSession)
 
