@@ -19,7 +19,7 @@ nfpms:
 
 brews:
   - name: aws-ssh
-    github:
+    tap:
       owner: springload
       name: homebrew-tools
     folder: Formula
