@@ -24,23 +24,20 @@ type ProfileConfig struct {
 type SSHEntry struct {
 	Address,
 	InstanceID,
-	Name,
 	ProxyJump,
 	Port,
 	User,
 	Profile,
 	Domain string
+
+	Names []string
 }
 
 // ConfigFormat returns formatted and stringified SSHEntry ready to use in ssh config
 func (e SSHEntry) ConfigFormat() string {
 	var output = []string{}
 
-	if e.Domain != "" {
-		output = append(output, fmt.Sprintf("Host %s %s %s.%s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile, e.Name, e.Domain))
-	} else {
-		output = append(output, fmt.Sprintf("Host %s %s %s.%s", e.Name, e.InstanceID, e.Address, e.Profile))
-	}
+	output = append(output, fmt.Sprintf("Host %s", strings.Join(e.Names, " ")))
 
 	if e.User != "" {
 		output = append(output, fmt.Sprintf("    User %s", e.User))
@@ -128,18 +125,10 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 
 				for n, instance := range nameGroup.Group {
 					instance := instance.(*ec2.Instance)
-					var instanceIndex string
-					if len(nameGroup.Group) > 1 {
-						instanceIndex = fmt.Sprintf("%d", n+1)
-					}
 					var entry = SSHEntry{
 						InstanceID: aws.StringValue(instance.InstanceId),
-						Name:       getInstanceCanonicalName(summary.Name, instanceName, instanceIndex),
 						Profile:    summary.Name,
 						Domain:     summary.Domain,
-					}
-					if noProfilePrefix {
-						entry.Name = getInstanceCanonicalName("", instanceName, instanceIndex)
 					}
 
 					// first try to find a bastion from this vpc
@@ -165,6 +154,16 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 					}
 					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
 					entry.Port = getTagValue("x-aws-ssh-port", instance.Tags)
+					var instanceIndex string
+					if len(nameGroup.Group) > 1 {
+						instanceIndex = fmt.Sprintf("%d", n+1)
+					}
+					// add all names of the instance
+					var name = getInstanceCanonicalName(summary.Name, instanceName, instanceIndex)
+					if noProfilePrefix {
+						name = getInstanceCanonicalName("", instanceName, instanceIndex)
+					}
+					entry.Names = append(entry.Names, name, entry.InstanceID, fmt.Sprintf("%s.%s", entry.Address, entry.Profile))
 					sshEntries = append(sshEntries, entry)
 				}
 			}
