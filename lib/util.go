@@ -76,6 +76,7 @@ func (w weights) Less(i, j int) bool { return w[i].Weight < w[j].Weight }
 func (w weights) Swap(i, j int)      { w[i], w[j] = w[j], w[i] }
 
 func findBestBastion(instanceName string, bastions []*ec2.Instance) *ec2.Instance {
+	// skip instances with bastionCanonicalName in name
 	if !strings.Contains(instanceName, bastionCanonicalName) && len(bastions) > 0 {
 		if len(bastions) == 1 {
 			return bastions[0]
