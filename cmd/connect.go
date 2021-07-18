@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"aws-ssh/lib"
+	"aws-ssh/lib/ec2connect"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -20,7 +20,7 @@ the first public key from your running ssh agent and then runs ssh command`,
 		if len(profiles) > 0 {
 			profile = profiles[0]
 		}
-		lib.ConnectEC2(profile, viper.GetString("instanceid"), viper.GetString("user"), args)
+		ec2connect.ConnectEC2(profile, viper.GetString("instanceid"), viper.GetString("user"), args)
 	},
 }
 

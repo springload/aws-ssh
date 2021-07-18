@@ -1,4 +1,4 @@
-package lib
+package ec2connect
 
 import (
 	"fmt"
