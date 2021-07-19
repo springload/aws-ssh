@@ -9,14 +9,25 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	multierror "github.com/hashicorp/go-multierror"
+	linq "gopkg.in/ahmetb/go-linq.v3"
 )
 
-// ProfileSummary represents profile summary
-type ProfileSummary struct {
+// profileSummary represents profile summary
+// with raw unprocessed information about instances
+type profileSummary struct {
 	Name      string
 	Region    string
 	Instances []*ec2.Instance
 	Domain    string
+}
+
+// ProcessedProfileSummary represents profile summary
+// with processed ssh entries, containing instance names, etc
+type ProcessedProfileSummary struct {
+	Name       string
+	Region     string
+	SSHEntries []SSHEntry
+	Domain     string
 }
 
 func makeSession(profile string) (*session.Session, error) {
@@ -34,13 +45,13 @@ func makeSession(profile string) (*session.Session, error) {
 	return localSession, nil
 }
 
-// TraverseProfiles goes through all profiles and returns a list of ProfileSummary
-func TraverseProfiles(profiles []ProfileConfig) ([]ProfileSummary, error) {
+// TraverseProfiles goes through all profiles and returns a list of ProcessedProfileSummary
+func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]ProcessedProfileSummary, error) {
 	log.Debugf("Traversing through %d profiles", len(profiles))
-	var profileSummaryChan = make(chan ProfileSummary, len(profiles))
+	var profileSummaryChan = make(chan profileSummary, len(profiles))
 	var errChan = make(chan error, len(profiles))
 
-	var profileSummaries []ProfileSummary
+	var profileSummaries []profileSummary
 	for _, profile := range profiles {
 		go func(profile ProfileConfig) {
 			DescribeProfile(profile, profileSummaryChan, errChan)
@@ -60,18 +71,128 @@ func TraverseProfiles(profiles []ProfileConfig) ([]ProfileSummary, error) {
 
 	// sort alphabetically by profile name
 	sort.Slice(profileSummaries, func(i, j int) bool { return profileSummaries[i].Name < profileSummaries[j].Name })
-	return profileSummaries, errors
+
+	var processedProfileSummaries []ProcessedProfileSummary
+	// go through all profileSummaries and
+	// create sshEntries out of it
+	for _, summary := range profileSummaries {
+		var profileSSHEntries []SSHEntry
+
+		ctx := log.WithField("profile", summary.Name)
+		// group instances by VPC
+		ctx.Debug("Grouping instances by VPC")
+
+		var vpcInstances []linq.Group
+
+		// take the instances slice
+		linq.From(summary.Instances).OrderBy(instanceNameSorter). // sort by name first
+										ThenBy(instanceLaunchTimeSorter).         // then by launch time
+										GroupBy(func(i interface{}) interface{} { // and then group by vpc
+				vpcID := i.(*ec2.Instance).VpcId
+				return aws.StringValue(vpcID)
+			}, func(i interface{}) interface{} {
+				return i.(*ec2.Instance)
+			}).ToSlice(&vpcInstances)
+
+		var commonBastions []*ec2.Instance
+		linq.From(summary.Instances).OrderBy(instanceNameSorter). // sort by name first
+										ThenBy(instanceLaunchTimeSorter). // then by launch time
+										Where(
+				func(f interface{}) bool {
+					return isBastionFromTags(f.(*ec2.Instance).Tags, true) // check for global tag as well
+				},
+			).ToSlice(&commonBastions)
+
+		ctx.Debugf("Found %d common (global) bastions", len(commonBastions))
+
+		for _, vpcGroup := range vpcInstances { // take the instances grouped by vpc and iterate
+			var vpcBastions []*ec2.Instance
+			linq.From(vpcGroup.Group).Where(
+				func(f interface{}) bool {
+					return isBastionFromTags(f.(*ec2.Instance).Tags, false) // "false" means don't check for global tag
+				},
+			).ToSlice(&vpcBastions)
+
+			ctx.WithField("vpc", vpcGroup.Key).Debugf("Found %d bastions", len(vpcBastions))
+
+			var nameInstances []linq.Group
+			linq.From(vpcGroup.Group).GroupBy(func(i interface{}) interface{} { // now group them by name
+				instanceName := getNameFromTags(i.(*ec2.Instance).Tags)
+				return instanceName
+			}, func(i interface{}) interface{} {
+				return i.(*ec2.Instance)
+			}).ToSlice(&nameInstances)
+
+			// now we have instances, grouped by vpc and name
+			for _, nameGroup := range nameInstances {
+				instanceName := nameGroup.Key.(string)
+
+				for n, instance := range nameGroup.Group {
+					instance := instance.(*ec2.Instance)
+					var entry = SSHEntry{
+						InstanceID: aws.StringValue(instance.InstanceId),
+						Profile:    summary.Name,
+					}
+
+					// first try to find a bastion from this vpc
+					bastion := findBestBastion(instanceName, vpcBastions)
+					if bastion == nil { // then try common ones
+						bastion = findBestBastion(instanceName, commonBastions)
+					}
+					entry.Address = aws.StringValue(instance.PrivateIpAddress) // get the private address first as we always have one
+					if bastion != nil {                                        // get private address and add proxyhost, which is the bastion ip
+						bastionUser := getTagValue("x-aws-ssh-user", bastion.Tags)
+						bastionPort := getTagValue("x-aws-ssh-port", bastion.Tags)
+						entry.ProxyJump = aws.StringValue(bastion.PublicIpAddress)
+						if bastionUser != "" {
+							entry.ProxyJump = fmt.Sprintf("%s@%s", bastionUser, entry.ProxyJump)
+						}
+						if bastionPort != "" {
+							entry.ProxyJump = fmt.Sprintf("%s:%s", entry.ProxyJump, bastionPort)
+						}
+					} else { // get public IP if we have one
+						if publicIP := aws.StringValue(instance.PublicIpAddress); publicIP != "" {
+							entry.Address = aws.StringValue(instance.PublicIpAddress)
+						}
+					}
+					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
+					entry.Port = getTagValue("x-aws-ssh-port", instance.Tags)
+					var instanceIndex string
+					if len(nameGroup.Group) > 1 {
+						instanceIndex = fmt.Sprintf("%d", n+1)
+					}
+					// add all names of the instance
+					var name = getInstanceCanonicalName(summary.Name, instanceName, instanceIndex)
+					if noProfilePrefix {
+						name = getInstanceCanonicalName("", instanceName, instanceIndex)
+					}
+					entry.Names = append(entry.Names, name, entry.InstanceID, fmt.Sprintf("%s.%s", entry.Address, entry.Profile))
+					profileSSHEntries = append(profileSSHEntries, entry)
+				}
+			}
+		}
+		// sort by the first (main) name alphabetically
+		sort.SliceStable(profileSSHEntries, func(i, j int) bool { return profileSSHEntries[i].Names[0] < profileSSHEntries[j].Names[0] })
+
+		processedProfileSummaries = append(processedProfileSummaries, ProcessedProfileSummary{
+			Name:       summary.Name,
+			Region:     summary.Region,
+			SSHEntries: profileSSHEntries,
+			Domain:     summary.Domain,
+		})
+	}
+	return processedProfileSummaries, errors
 }
 
 // DescribeProfile describes the specified profile
-func DescribeProfile(profile ProfileConfig, sum chan ProfileSummary, errChan chan error) {
+func DescribeProfile(profile ProfileConfig, sum chan profileSummary, errChan chan error) {
 	awsSession, err := makeSession(profile.Name)
 	if err != nil {
 		errChan <- fmt.Errorf("Couldn't create session for '%s': %s", profile.Name, err)
 		return
 	}
 
-	profileSummary := ProfileSummary{
+	profileSummary := profileSummary{
 		Name:   profile.Name,
 		Region: aws.StringValue(awsSession.Config.Region),
 		Domain: profile.Domain,

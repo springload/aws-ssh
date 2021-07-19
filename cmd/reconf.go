@@ -22,8 +22,5 @@ which is a filename. In case of any errors, the preexisting file won't be touche
 }
 
 func init() {
-	reconfCmd.Flags().BoolP("no-profile-prefix", "n", false, "Do not prefix host names with profile name")
-
-	viper.BindPFlag("no-profile-prefix", reconfCmd.Flags().Lookup("no-profile-prefix"))
 	rootCmd.AddCommand(reconfCmd)
 }
