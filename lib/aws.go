@@ -3,7 +3,6 @@ package lib
 import (
 	"fmt"
 	"sort"
-	"sync"
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,8 +13,6 @@ import (
 
 // ProfileSummary represents profile summary
 type ProfileSummary struct {
-	sync.Mutex
-
 	Name      string
 	Region    string
 	Instances []*ec2.Instance
