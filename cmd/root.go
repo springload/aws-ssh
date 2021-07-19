@@ -4,6 +4,7 @@ import (
 	"aws-ssh/lib"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -46,6 +47,12 @@ func init() {
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.BindPFlag("no-profile-prefix", rootCmd.PersistentFlags().Lookup("no-profile-prefix"))
 	viper.BindPFlag("profiles", rootCmd.PersistentFlags().Lookup("profile"))
+
+	viper.SetEnvPrefix("aws_ssh") // will be uppercased
+
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.AutomaticEnv()
+
 }
 
 func initSettings() {
