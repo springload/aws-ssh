@@ -27,9 +27,11 @@ type SSHEntry struct {
 	ProxyJump,
 	Port,
 	User,
-	Profile,
-	Domain string
+	Profile string
 
+	// Names of the instance, meaning all aliases.
+	// The main identifier is instance id, then there are a couple of more,
+	// constructed from profile name, for example
 	Names []string
 }
 
@@ -128,7 +130,6 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 					var entry = SSHEntry{
 						InstanceID: aws.StringValue(instance.InstanceId),
 						Profile:    summary.Name,
-						Domain:     summary.Domain,
 					}
 
 					// first try to find a bastion from this vpc
