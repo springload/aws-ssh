@@ -18,18 +18,30 @@ Usage:
   aws-ssh [command]
 
 Available Commands:
+  connect     SSH into the EC2 instance using ec2 connect feature
   help        Help about any command
   reconf      Creates a new ssh config
   test        A brief description of your command
 
 Flags:
-  -d, --debug             Show debug output
-  -h, --help              help for aws-ssh
-  -p, --profile strings   Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/config and ~/.aws/credentials
+  -d, --debug               Show debug output
+  -h, --help                help for aws-ssh
+  -n, --no-profile-prefix   Do not prefix host names with profile name
+  -p, --profile strings     Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/confi
       --version           version for aws-ssh
 
 Use "aws-ssh [command] --help" for more information about a command.
 ```
+
+### Environment variables
+
+aws-ssh uses [viper](https://github.com/spf13/viper) under the hood, so it supports taking environment variables that correspond to the flags out of the box.
+
+For example:
+
+1. `AWS_SSH_DEBUG` is the `--debug` flag,
+2. `AWS_SSH_NO_PROFILE_PREFIX` is `--no-profile-prefix`,
+3. etc...
 
 ### Build
 
