@@ -40,9 +40,11 @@ func init() {
 	cobra.OnInitialize(initSettings)
 
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show debug output")
+	rootCmd.PersistentFlags().BoolP("no-profile-prefix", "n", false, "Do not prefix host names with profile name")
 	rootCmd.PersistentFlags().StringSliceP("profile", "p", []string{}, "Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/config and ~/.aws/credentials")
 
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
+	viper.BindPFlag("no-profile-prefix", rootCmd.PersistentFlags().Lookup("no-profile-prefix"))
 	viper.BindPFlag("profiles", rootCmd.PersistentFlags().Lookup("profile"))
 }
 
