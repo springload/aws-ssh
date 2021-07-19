@@ -104,17 +104,17 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 				},
 			).ToSlice(&commonBastions)
 
-		ctx.Debugf("Found %d common bastions", len(commonBastions))
+		ctx.Debugf("Found %d common (global) bastions", len(commonBastions))
 
 		for _, vpcGroup := range vpcInstances { // take the instances grouped by vpc and iterate
 			var vpcBastions []*ec2.Instance
 			linq.From(vpcGroup.Group).Where(
 				func(f interface{}) bool {
-					return isBastionFromTags(f.(*ec2.Instance).Tags, false) // don't check for global tag
+					return isBastionFromTags(f.(*ec2.Instance).Tags, false) // "false" means don't check for global tag
 				},
 			).ToSlice(&vpcBastions)
 
-			ctx.Debugf("Found %d bastions", len(vpcBastions))
+			ctx.WithField("vpc", vpcGroup.Key).Debugf("Found %d bastions", len(vpcBastions))
 
 			var nameInstances []linq.Group
 			linq.From(vpcGroup.Group).GroupBy(func(i interface{}) interface{} { // now group them by name
