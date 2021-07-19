@@ -110,3 +110,13 @@ func getInstanceCanonicalName(profile, instanceName, instanceIndex string) strin
 
 	return sanitiser.ReplaceAllString(strings.Join(parts, "-"), "-")
 }
+
+func instanceLaunchTimeSorter(i interface{}) interface{} { // sorts by launch time
+	launched := aws.TimeValue(i.(*ec2.Instance).LaunchTime)
+	return launched.Unix()
+}
+
+func instanceNameSorter(i interface{}) interface{} { // sort by instance name
+	instanceName := getNameFromTags(i.(*ec2.Instance).Tags)
+	return instanceName
+}

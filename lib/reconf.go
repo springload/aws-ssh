@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // ProfileConfig represents an entry in aws config
@@ -52,16 +50,6 @@ func (e SSHEntry) ConfigFormat() string {
 	output = append(output, fmt.Sprintf("    Hostname %s", e.Address), "\n")
 
 	return strings.Join(output, "\n")
-}
-
-func instanceLaunchTimeSorter(i interface{}) interface{} { // sorts by launch time
-	launched := aws.TimeValue(i.(*ec2.Instance).LaunchTime)
-	return launched.Unix()
-}
-
-func instanceNameSorter(i interface{}) interface{} { // sort by instance name
-	instanceName := getNameFromTags(i.(*ec2.Instance).Tags)
-	return instanceName
 }
 
 // Reconf writes ssh config with profiles into the specified file
