@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/apex/log"
@@ -30,8 +31,8 @@ type SSHEntry struct {
 	Profile string
 
 	// Names of the instance, meaning all aliases.
-	// The main identifier is instance id, then there are a couple of more,
-	// constructed from profile name, for example
+	// The main identifier is constructed from profile name and instance Name tag
+	// then comes instance id, then there are a couple of more
 	Names []string
 }
 
@@ -76,6 +77,8 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 	var sshEntries []SSHEntry
 
 	for _, summary := range profileSummaries {
+		var profileSSHEntries []SSHEntry
+
 		ctx := log.WithField("profile", summary.Name)
 		// group instances by VPC
 		ctx.Debug("Grouping instances by VPC")
@@ -165,10 +168,13 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 						name = getInstanceCanonicalName("", instanceName, instanceIndex)
 					}
 					entry.Names = append(entry.Names, name, entry.InstanceID, fmt.Sprintf("%s.%s", entry.Address, entry.Profile))
-					sshEntries = append(sshEntries, entry)
+					profileSSHEntries = append(profileSSHEntries, entry)
 				}
 			}
 		}
+		// sort by the first (main) name alphabetically
+		sort.SliceStable(profileSSHEntries, func(i, j int) bool { return profileSSHEntries[i].Names[0] < profileSSHEntries[j].Names[0] })
+		sshEntries = append(sshEntries, profileSSHEntries...)
 	}
 
 	tmpfile, err := ioutil.TempFile(path.Dir(filename), "aws-ssh")
