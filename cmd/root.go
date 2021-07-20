@@ -4,10 +4,12 @@ import (
 	"aws-ssh/lib"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -16,7 +18,10 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "aws-ssh",
+	Use: "aws-ssh",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 	Short: "Describe your AWS and get ssh config to connect to ec2 instances",
 	Long: `This program goes through all available AWS accounts in parallel and determines
 IP addresses of ec2 instances. It also detects so-called "bastion" instances.
@@ -38,15 +43,28 @@ func Execute(version string) {
 }
 
 func init() {
+	var defaultCacheDir string
+	if val, ok := os.LookupEnv("XDG_CACHE_HOME"); ok {
+		defaultCacheDir = path.Join(val, "aws-ssh")
+	} else {
+		homeDir, err := homedir.Dir()
+		if err != nil {
+			log.WithError(err).Fatal("can't get homedir")
+		}
+		defaultCacheDir = path.Join(homeDir, ".cache", "aws-ssh")
+	}
+
 	cobra.OnInitialize(initSettings)
 
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show debug output")
 	rootCmd.PersistentFlags().BoolP("no-profile-prefix", "n", false, "Do not prefix host names with profile name")
 	rootCmd.PersistentFlags().StringSliceP("profile", "p", []string{}, "Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/config and ~/.aws/credentials")
+	rootCmd.PersistentFlags().StringP("cache-dir", "", defaultCacheDir, "Cache dir, which is used by \"update\" and \"connect\" commands")
 
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.BindPFlag("no-profile-prefix", rootCmd.PersistentFlags().Lookup("no-profile-prefix"))
 	viper.BindPFlag("profiles", rootCmd.PersistentFlags().Lookup("profile"))
+	viper.BindPFlag("cache-dir", rootCmd.PersistentFlags().Lookup("cache-dir"))
 
 	viper.SetEnvPrefix("aws_ssh") // will be uppercased
 
