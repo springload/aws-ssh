@@ -13,9 +13,6 @@ var reconfCmd = &cobra.Command{
 	Short: "Creates a new ssh config",
 	Long: `Reconfigures your ssh by creating a new config for it. Only one argument is required,
 which is a filename. In case of any errors, the preexisting file won't be touched.`,
-	PreRun: func(cmd *cobra.Command, args []string) {
-		initConfig()
-	},
 	Run: func(cmd *cobra.Command, args []string) {
 		lib.Reconf(viper.Get("profilesConfig").([]lib.ProfileConfig), args[0], viper.GetBool("no-profile-prefix"))
 	},

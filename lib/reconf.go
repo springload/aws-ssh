@@ -1,51 +1,13 @@
 package lib
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/apex/log"
 )
-
-// SSHEntry represents an entry in ssh config
-type SSHEntry struct {
-	ProfileConfig ProfileConfig
-
-	Address,
-	InstanceID,
-	ProxyJump,
-	Port,
-	User string
-
-	// Names of the instance, meaning all aliases.
-	// The main identifier is constructed from profile name and instance Name tag
-	// then comes instance id, then there are a couple of more
-	Names []string
-}
-
-// ConfigFormat returns formatted and stringified SSHEntry ready to use in ssh config
-func (e SSHEntry) ConfigFormat() string {
-	var output = []string{}
-
-	output = append(output, fmt.Sprintf("Host %s", strings.Join(e.Names, " ")))
-
-	if e.User != "" {
-		output = append(output, fmt.Sprintf("    User %s", e.User))
-	}
-	if e.ProxyJump != "" {
-		output = append(output, fmt.Sprintf("    ProxyJump %s", e.ProxyJump))
-	}
-	if e.Port != "" {
-		output = append(output, fmt.Sprintf("    Port %s", e.Port))
-	}
-	output = append(output, fmt.Sprintf("    Hostname %s", e.Address), "\n")
-
-	return strings.Join(output, "\n")
-}
 
 // Reconf writes ssh config with profiles into the specified file
 func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
