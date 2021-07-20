@@ -4,6 +4,7 @@ import (
 	"aws-ssh/lib"
 )
 
+// Cache represents the cache for profiles
 type Cache interface {
 	// Load() loads the cache
 	Load() ([]lib.ProcessedProfileSummary, error)
