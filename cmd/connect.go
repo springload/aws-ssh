@@ -33,7 +33,7 @@ the first public key from your running ssh agent and then runs ssh command`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var sshEntries lib.SSHEntries
 		var profile string
-		var instanceId = viper.GetString("instanceid")
+		var instanceID = viper.GetString("instanceid")
 		var defaultUser = viper.GetString("user")
 
 		profiles := viper.GetStringSlice("profiles")
@@ -41,10 +41,11 @@ the first public key from your running ssh agent and then runs ssh command`,
 			profile = profiles[0]
 			ec2connect.ConnectEC2(
 				lib.SSHEntries{
-					lib.SSHEntry{
+					&lib.SSHEntry{
 						ProfileConfig: lib.ProfileConfig{Name: profile},
-						InstanceID:    instanceId,
+						InstanceID:    instanceID,
 						User:          defaultUser,
+						Names:         []string{instanceID},
 					},
 				},
 				viper.GetString("ssh-config-path"),
@@ -55,15 +56,15 @@ the first public key from your running ssh agent and then runs ssh command`,
 		log.Info("No profile has been provided, switching to the cache mode")
 		cache := cache.NewYAMLCache(viper.GetString("cache-dir"))
 
-		sshEntry, err := cache.Lookup(instanceId)
+		sshEntry, err := cache.Lookup(instanceID)
 		if err != nil {
-			log.WithError(err).Fatalf("can't lookup %s in cache", instanceId)
+			log.WithError(err).Fatalf("can't lookup %s in cache", instanceID)
 		}
 		if sshEntry.User == "" {
 			sshEntry.User = defaultUser
 		}
 
-		sshEntries = append(sshEntries, sshEntry)
+		sshEntries = append(sshEntries, &sshEntry)
 		// ProxyJump is set, which means we need to lookup the bastion host too
 		if sshEntry.ProxyJump != "" {
 			bastionEntry, err := cache.Lookup(sshEntry.ProxyJump)
@@ -74,7 +75,7 @@ the first public key from your running ssh agent and then runs ssh command`,
 				bastionEntry.User = defaultUser
 			}
 			log.WithField("instance_id", bastionEntry.InstanceID).Infof("Got bastion %s", bastionEntry.Names[0])
-			sshEntries = append(sshEntries, bastionEntry)
+			sshEntries = append(sshEntries, &bastionEntry)
 		}
 		ec2connect.ConnectEC2(sshEntries, viper.GetString("ssh-config-path"), args)
 	},

@@ -21,11 +21,6 @@ import (
 // ConnectEC2 connects to an EC2 instance by pushing your public key onto it first
 // using EC2 connect feature and then runs ssh.
 func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) {
-	// save the dynamic ssh config first
-	if err := sshEntries.SaveConfig(sshConfigPath); err != nil {
-		log.WithError(err).Fatal("can't save ssh config for ec2 connect")
-	}
-
 	// get the pub key from the ssh agent first
 	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
 
@@ -34,8 +29,6 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 		log.Fatal("Can't get public keys from ssh agent. Please ensure you have the ssh-agent running and have at least one identity added (with ssh-add)")
 	}
 	pubkey := keys[0].String()
-
-	// then generate ssh config for all instances in sshEntries
 
 	// push the pub key to those instances one after each other
 	// TODO: make it parallel
@@ -46,19 +39,33 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 		}
 
 		log.WithField("instance", instanceName).WithField("user", sshEntry.User).Info("Pushing SSH key...")
-		err = pushEC2Connect(sshEntry.ProfileConfig.Name, sshEntry.InstanceID, sshEntry.User, pubkey)
+		instanceIpAddress, err := pushEC2Connect(sshEntry.ProfileConfig.Name, sshEntry.InstanceID, sshEntry.User, pubkey)
 		if err != nil {
 			log.WithError(err).Fatal("can't push ssh key to the instance")
 		}
+		// if the address is empty we set to the value we got from ec2 connect push
+		if sshEntry.Address == "" {
+			sshEntry.Address = instanceIpAddress
+		}
 	}
 
+	// then generate ssh config for all instances in sshEntries
+	// save the dynamic ssh config first
+	if err := sshEntries.SaveConfig(sshConfigPath); err != nil {
+		log.WithError(err).Fatal("can't save ssh config for ec2 connect")
+	}
+
+	var instanceName = sshEntries[0].InstanceID
+	if len(sshEntries[0].Names) > 0 {
+		instanceName = sshEntries[0].Names[0]
+	}
 	// connect to the first instance in sshEntry, as the other will be bastion(s)
 	if len(args) == 0 {
 		// construct default args
 		args = []string{
 			"ssh",
 			"-tt",
-			fmt.Sprintf(sshEntries[0].Names[0]),
+			instanceName,
 		}
 	}
 
@@ -73,7 +80,9 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 	}
 }
 
-func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) error {
+// pushEC2Connect pushes the ssh key to a given profile and instance ID
+// and returns the public (or private if public doesn't exist) address of the EC2 instance
+func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, error) {
 	localSession, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{},
 
@@ -81,18 +90,18 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) error {
 		Profile:           profile,
 	})
 	if err != nil {
-		return fmt.Errorf("can't get aws session: %s", err)
+		return "", fmt.Errorf("can't get aws session: %s", err)
 	}
 	ec2Svc := ec2.New(localSession)
 	ec2Result, err := ec2Svc.DescribeInstances(&ec2.DescribeInstancesInput{
 		InstanceIds: aws.StringSlice([]string{instanceID}),
 	})
 	if err != nil {
-		return fmt.Errorf("can't get ec2 instance: %s", err)
+		return "", fmt.Errorf("can't get ec2 instance: %s", err)
 	}
 
 	if len(ec2Result.Reservations) == 0 || len(ec2Result.Reservations[0].Instances) == 0 {
-		return fmt.Errorf("Couldn't find the instance %s", instanceID)
+		return "", fmt.Errorf("Couldn't find the instance %s", instanceID)
 	}
 
 	ec2Instance := ec2Result.Reservations[0].Instances[0]
@@ -104,7 +113,11 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) error {
 		AvailabilityZone: ec2Instance.Placement.AvailabilityZone,
 		SSHPublicKey:     aws.String(pubKey),
 	}); err != nil {
-		return fmt.Errorf("can't push ssh key: %s", err)
+		return "", fmt.Errorf("can't push ssh key: %s", err)
 	}
-	return nil
+	var address = aws.StringValue(ec2Instance.PrivateIpAddress)
+	if aws.StringValue(ec2Instance.PublicIpAddress) != "" {
+		address = aws.StringValue(ec2Instance.PublicIpAddress)
+	}
+	return address, nil
 }

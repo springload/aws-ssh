@@ -14,7 +14,9 @@ type ProfileConfig struct {
 	Domain string // domain if set with "aws-ssh-domain" in the config
 }
 
-type SSHEntries []SSHEntry
+// SSHEntries is a list of SSHEntry with additional function
+// to save the config to a file
+type SSHEntries []*SSHEntry
 
 // SaveConfig saves the ssh config for the entries
 func (e SSHEntries) SaveConfig(path string) error {
