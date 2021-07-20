@@ -56,6 +56,9 @@ func (y *YAMLCache) loadIndex() error {
 	var indexFileName = path.Join(y.basedir, fmt.Sprintf("index.yaml"))
 	indexFile, err := os.OpenFile(indexFileName, os.O_RDONLY, 0644)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("cache doesn't exist, try \"aws-ssh update\"")
+		}
 		return fmt.Errorf("can't open %s: %s", indexFileName, err)
 	}
 
@@ -126,6 +129,9 @@ func (y *YAMLCache) Lookup(name string) (lib.SSHEntry, error) {
 	// switch to fuzzy match if don't have exact match
 	// or name was no provided
 	if val, ok := y.index.InstancesIndex[name]; !ok || name == "" {
+		if len(y.index.CanonicalNames) == 0 {
+			return entry, fmt.Errorf("no names in index, try \"aws-ssh update\"")
+		}
 		idx, err := fuzzyfinder.Find(y.index.CanonicalNames, func(i int) string {
 			return fmt.Sprintf("%s", y.index.CanonicalNames[i])
 		})
