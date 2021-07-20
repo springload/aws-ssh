@@ -11,20 +11,15 @@ import (
 	"github.com/apex/log"
 )
 
-// ProfileConfig represents an entry in aws config
-type ProfileConfig struct {
-	Name,
-	Domain string
-}
-
 // SSHEntry represents an entry in ssh config
 type SSHEntry struct {
+	ProfileConfig ProfileConfig
+
 	Address,
 	InstanceID,
 	ProxyJump,
 	Port,
-	User,
-	Profile string
+	User string
 
 	// Names of the instance, meaning all aliases.
 	// The main identifier is constructed from profile name and instance Name tag

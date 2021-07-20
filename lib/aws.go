@@ -15,19 +15,17 @@ import (
 // profileSummary represents profile summary
 // with raw unprocessed information about instances
 type profileSummary struct {
-	Name      string
-	Region    string
+	ProfileConfig
+
 	Instances []*ec2.Instance
-	Domain    string
 }
 
 // ProcessedProfileSummary represents profile summary
 // with processed ssh entries, containing instance names, etc
 type ProcessedProfileSummary struct {
-	Name       string
-	Region     string
+	ProfileConfig
+
 	SSHEntries []SSHEntry
-	Domain     string
 }
 
 func makeSession(profile string) (*session.Session, error) {
@@ -131,8 +129,14 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 					instance := instance.(*ec2.Instance)
 					var entry = SSHEntry{
 						InstanceID: aws.StringValue(instance.InstanceId),
-						Profile:    summary.Name,
+						ProfileConfig: ProfileConfig{
+							Name:   summary.Name,
+							Region: summary.Region,
+							Domain: summary.Domain,
+						},
 					}
+					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
+					entry.Port = getTagValue("x-aws-ssh-port", instance.Tags)
 
 					// first try to find a bastion from this vpc
 					bastion := findBestBastion(instanceName, vpcBastions)
@@ -141,22 +145,14 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 					}
 					entry.Address = aws.StringValue(instance.PrivateIpAddress) // get the private address first as we always have one
 					if bastion != nil {                                        // get private address and add proxyhost, which is the bastion ip
-						bastionUser := getTagValue("x-aws-ssh-user", bastion.Tags)
-						bastionPort := getTagValue("x-aws-ssh-port", bastion.Tags)
-						entry.ProxyJump = aws.StringValue(bastion.PublicIpAddress)
-						if bastionUser != "" {
-							entry.ProxyJump = fmt.Sprintf("%s@%s", bastionUser, entry.ProxyJump)
-						}
-						if bastionPort != "" {
-							entry.ProxyJump = fmt.Sprintf("%s:%s", entry.ProxyJump, bastionPort)
-						}
+						// refer to the bastion by its instance ID
+						// which we should have a record for
+						entry.ProxyJump = aws.StringValue(bastion.InstanceId)
 					} else { // get public IP if we have one
 						if publicIP := aws.StringValue(instance.PublicIpAddress); publicIP != "" {
 							entry.Address = aws.StringValue(instance.PublicIpAddress)
 						}
 					}
-					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
-					entry.Port = getTagValue("x-aws-ssh-port", instance.Tags)
 					var instanceIndex string
 					if len(nameGroup.Group) > 1 {
 						instanceIndex = fmt.Sprintf("%d", n+1)
@@ -166,7 +162,7 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 					if noProfilePrefix {
 						name = getInstanceCanonicalName("", instanceName, instanceIndex)
 					}
-					entry.Names = append(entry.Names, name, entry.InstanceID, fmt.Sprintf("%s.%s", entry.Address, entry.Profile))
+					entry.Names = append(entry.Names, name, entry.InstanceID, fmt.Sprintf("%s.%s", entry.Address, entry.ProfileConfig.Name))
 					profileSSHEntries = append(profileSSHEntries, entry)
 				}
 			}
@@ -175,10 +171,12 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 		sort.SliceStable(profileSSHEntries, func(i, j int) bool { return profileSSHEntries[i].Names[0] < profileSSHEntries[j].Names[0] })
 
 		processedProfileSummaries = append(processedProfileSummaries, ProcessedProfileSummary{
-			Name:       summary.Name,
-			Region:     summary.Region,
+			ProfileConfig: ProfileConfig{
+				Name:   summary.Name,
+				Region: summary.Region,
+				Domain: summary.Domain,
+			},
 			SSHEntries: profileSSHEntries,
-			Domain:     summary.Domain,
 		})
 	}
 	return processedProfileSummaries, errors
@@ -193,9 +191,11 @@ func DescribeProfile(profile ProfileConfig, sum chan profileSummary, errChan cha
 	}
 
 	profileSummary := profileSummary{
-		Name:   profile.Name,
-		Region: aws.StringValue(awsSession.Config.Region),
-		Domain: profile.Domain,
+		ProfileConfig: ProfileConfig{
+			Name:   profile.Name,
+			Region: aws.StringValue(awsSession.Config.Region),
+			Domain: profile.Domain,
+		},
 	}
 
 	svc := ec2.New(awsSession)
