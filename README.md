@@ -1,4 +1,4 @@
-### What it is
+### aws-ssh is your swiss knife for SSH into AWS instances
 
 This program goes through all available AWS accounts in parallel and determines
 
@@ -11,7 +11,23 @@ There are the following EC2 instance tags that change behaviour:
 3. "x-aws-ssh-user" - sets the ssh username in the config.
 4. "x-aws-ssh-port" - sets the ssh port in the config.
 
-Any comments and especially pull requests are highly appreciated.
+### Utilise ec2 connect feature
+
+If your AWS EC2 instances are set up for ec2 connect and your AWS user has appropriate IAM policies, aws-ssh can connect to the instance straight away.
+
+There are certain prerequisites:
+
+1. Check `--ssh-config-path` option of "aws-ssh connect". aws-ssh will generate an config for SSH under this path, which will have the instance IP address, user to log under and even config for the bastion hosts. This file will be rewritted on every run of aws-ssh
+2. Include the above file into your ssh config using `Include ec2_connect_config` where `ec2_connect_config` is the filename (or path) as above.
+3. You can specify AWS profile from your config using `-p` flag and the instance id using `-i` flag.
+4. But it's boring to look up the instance id every time so you can run `aws-ssh update` to generate cache of all EC2 instances across all available AWS profiles
+5. Then just run `aws-ssh connect` to search for the right instance and press "Enter"
+
+### Utilise reconf feature
+
+Instead of using EC2 connect, one can have their ssh keys directly on the instances, so for those cases there is `aws-ssh reconf` command which just generates ssh config to be included in the main one.
+
+### Basic usage
 
 ```
 Usage:
@@ -42,6 +58,8 @@ For example:
 1. `AWS_SSH_DEBUG` is the `--debug` flag,
 2. `AWS_SSH_NO_PROFILE_PREFIX` is `--no-profile-prefix`,
 3. etc...
+
+Basically, take any flag, add `AWS_SSH_` prefix, uppercase it and replace "-" with "\_".
 
 ### Build
 
