@@ -31,7 +31,7 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 	pubkey := keys[0].String()
 
 	// push the pub key to those instances one after each other
-	// TODO: make it parallel
+	// TODO: maybe make it parallel
 	for _, sshEntry := range sshEntries {
 		var instanceName = sshEntry.InstanceID
 		if len(sshEntry.Names) > 0 {
@@ -73,9 +73,18 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 	if err != nil {
 		log.WithError(err).Fatal("Can't find the binary in the PATH")
 	}
-	log.WithField("instance_id", sshEntries[0].InstanceID).Infof("Connecting to the instance using '%s'", strings.Join(args, " "))
 
-	if err := syscall.Exec(command, args, os.Environ()); err != nil {
+	var replacer = strings.NewReplacer(
+		"{host}", instanceName,
+		"{user}", sshEntries[0].User,
+	)
+	var newArgs []string
+	for _, arg := range args {
+		newArgs = append(newArgs, replacer.Replace(arg))
+	}
+	log.WithField("instance_id", sshEntries[0].InstanceID).Infof("Connecting to the instance using '%s'", strings.Join(newArgs, " "))
+
+	if err := syscall.Exec(command, newArgs, os.Environ()); err != nil {
 		log.WithFields(log.Fields{"command": command}).WithError(err).Fatal("can't run the command")
 	}
 }

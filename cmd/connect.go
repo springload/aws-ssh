@@ -13,14 +13,20 @@ import (
 )
 
 var connectCmd = &cobra.Command{
-	Use:   "connect [ssh command (ssh -tt user@instanceid)]",
+	Use:   "connect [ssh command (ssh -tt {host})]",
 	Short: "SSH into the EC2 instance using ec2 connect feature",
 	// override the default prerun
 	// as we don't need any profiles here
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 	},
 	Long: `aws-ssh connects to the EC2 instance using ec2 connect feature. It makes a special API call to upload
-the first public key from your running ssh agent and then runs ssh command`,
+the first public key from your running ssh agent and then runs ssh command.
+
+The ssh command accepts the following placeholders:
+1. {host} - will be replaced with the actual host
+2. {user} - will be replaced with the user.
+
+These placeholders are useful when you need to override the ssh command.`,
 	Aliases: []string{"ssh"},
 	/* There are 2 modes of this command:
 	   1. Run with the specified instanceid and AWS profile
