@@ -163,6 +163,9 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 						name = getInstanceCanonicalName("", instanceName, instanceIndex)
 					}
 					entry.Names = append(entry.Names, name, entry.InstanceID, fmt.Sprintf("%s.%s", entry.Address, entry.ProfileConfig.Name))
+					if summary.Domain != "" {
+						entry.Names = append(entry.Names, fmt.Sprintf("%s.%s", name, summary.Domain))
+					}
 					profileSSHEntries = append(profileSSHEntries, entry)
 				}
 			}
