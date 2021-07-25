@@ -49,6 +49,19 @@ Flags:
 Use "aws-ssh [command] --help" for more information about a command.
 ```
 
+#### Additional ~/.aws/config properties
+
+You can add an additonal property to AWS profiles like
+
+```ini
+
+[profile your_profile]
+...
+aws-ssh-domain = domain.com
+```
+
+To have the domain appended to the instance name, so in the SSH config it becomes `{profile}.{instance_name}.{domain}`
+
 ### Environment variables
 
 aws-ssh uses [viper](https://github.com/spf13/viper) under the hood, so it supports taking environment variables that correspond to the flags out of the box.
