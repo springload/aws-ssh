@@ -29,8 +29,18 @@ func getTagValue(tag string, tags []*ec2.Tag, caseInsensitive ...bool) string {
 	return ""
 
 }
+
 func getNameFromTags(tags []*ec2.Tag) string {
 	return strings.ToLower(getTagValue("Name", tags))
+}
+
+func getPortFromTags(tags []*ec2.Tag) string {
+	return strings.ToLower(getTagValue("x-aws-ssh-port", tags))
+}
+
+// GetUserFromTags gets the ec2 username from tags
+func GetUserFromTags(tags []*ec2.Tag) string {
+	return strings.ToLower(getTagValue("x-aws-ssh-user", tags))
 }
 
 func isBastionFromTags(tags []*ec2.Tag, checkGlobal bool) bool {

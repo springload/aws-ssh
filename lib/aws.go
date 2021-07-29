@@ -135,8 +135,8 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 							Domain: summary.Domain,
 						},
 					}
-					entry.User = getTagValue("x-aws-ssh-user", instance.Tags)
-					entry.Port = getTagValue("x-aws-ssh-port", instance.Tags)
+					entry.User = GetUserFromTags(instance.Tags)
+					entry.Port = getPortFromTags(instance.Tags)
 
 					// first try to find a bastion from this vpc
 					bastion := findBestBastion(instanceName, vpcBastions)
