@@ -18,6 +18,8 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
+const defaultUser = "ec2-user"
+
 // ConnectEC2 connects to an EC2 instance by pushing your public key onto it first
 // using EC2 connect feature and then runs ssh.
 func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) {
@@ -37,15 +39,17 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 		if len(sshEntry.Names) > 0 {
 			instanceName = sshEntry.Names[0]
 		}
-
-		log.WithField("instance", instanceName).WithField("user", sshEntry.User).Info("Pushing SSH key...")
-		instanceIpAddress, err := pushEC2Connect(sshEntry.ProfileConfig.Name, sshEntry.InstanceID, sshEntry.User, pubkey)
+		log.WithField("instance", instanceName).Info("trying to do ec2 connect...")
+		instanceIPAddress, instanceUser, err := pushEC2Connect(sshEntry.ProfileConfig.Name, sshEntry.InstanceID, sshEntry.User, pubkey)
 		if err != nil {
 			log.WithError(err).Fatal("can't push ssh key to the instance")
 		}
 		// if the address is empty we set to the value we got from ec2 connect push
 		if sshEntry.Address == "" {
-			sshEntry.Address = instanceIpAddress
+			sshEntry.Address = instanceIPAddress
+		}
+		if sshEntry.User == "" {
+			sshEntry.User = instanceUser
 		}
 	}
 
@@ -91,7 +95,8 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 
 // pushEC2Connect pushes the ssh key to a given profile and instance ID
 // and returns the public (or private if public doesn't exist) address of the EC2 instance
-func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, error) {
+func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, string, error) {
+	ctx := log.WithField("instance_id", instanceID)
 	localSession, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{},
 
@@ -99,22 +104,37 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, e
 		Profile:           profile,
 	})
 	if err != nil {
-		return "", fmt.Errorf("can't get aws session: %s", err)
+		return "", "", fmt.Errorf("can't get aws session: %s", err)
 	}
 	ec2Svc := ec2.New(localSession)
 	ec2Result, err := ec2Svc.DescribeInstances(&ec2.DescribeInstancesInput{
 		InstanceIds: aws.StringSlice([]string{instanceID}),
 	})
 	if err != nil {
-		return "", fmt.Errorf("can't get ec2 instance: %s", err)
+		return "", "", fmt.Errorf("can't get ec2 instance: %s", err)
 	}
 
 	if len(ec2Result.Reservations) == 0 || len(ec2Result.Reservations[0].Instances) == 0 {
-		return "", fmt.Errorf("Couldn't find the instance %s", instanceID)
+		return "", "", fmt.Errorf("Couldn't find the instance %s", instanceID)
 	}
 
 	ec2Instance := ec2Result.Reservations[0].Instances[0]
 	ec2ICSvc := ec2instanceconnect.New(localSession)
+
+	// no username has been provided, so we try to get it fom the instance tag first
+	if instanceUser == "" {
+		ctx.Debug("no user has been set provided, trying to get it from the tags")
+		// next try to get username from the instance tags
+		if instanceUser = lib.GetUserFromTags(ec2Instance.Tags); instanceUser == "" {
+			// otherwise fallback to default
+			ctx.WithField("user", defaultUser).Debugf("got no user from the instance tags, setting to default")
+			instanceUser = defaultUser
+		} else {
+			ctx.WithField("user", instanceUser).Debugf("got username from tags")
+		}
+	}
+
+	ctx.WithField("user", instanceUser).Info("pushing SSH key...")
 
 	if _, err := ec2ICSvc.SendSSHPublicKey(&ec2instanceconnect.SendSSHPublicKeyInput{
 		InstanceId:       ec2Instance.InstanceId,
@@ -122,11 +142,11 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, e
 		AvailabilityZone: ec2Instance.Placement.AvailabilityZone,
 		SSHPublicKey:     aws.String(pubKey),
 	}); err != nil {
-		return "", fmt.Errorf("can't push ssh key: %s", err)
+		return "", "", fmt.Errorf("can't push ssh key: %s", err)
 	}
 	var address = aws.StringValue(ec2Instance.PrivateIpAddress)
 	if aws.StringValue(ec2Instance.PublicIpAddress) != "" {
 		address = aws.StringValue(ec2Instance.PublicIpAddress)
 	}
-	return address, nil
+	return address, instanceUser, nil
 }
