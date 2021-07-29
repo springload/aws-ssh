@@ -45,6 +45,9 @@ These placeholders are useful when you need to override the ssh command.`,
 		profiles := viper.GetStringSlice("profiles")
 		if len(profiles) > 0 {
 			profile = profiles[0]
+			if instanceID == "" {
+				log.Fatalf("--instanceid is required but not set")
+			}
 			ec2connect.ConnectEC2(
 				lib.SSHEntries{
 					&lib.SSHEntry{
