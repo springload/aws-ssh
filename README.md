@@ -4,6 +4,19 @@ This program goes through all available AWS accounts in parallel and determines
 
 IP addresses of ec2 instances. It also detects so-called "bastion" instances.
 
+### Installation
+
+1. For MacOS use homebrew and install with `brew install springload/tools/aws-ssh`
+2. For Arch Linux install from AUR: https://aur.archlinux.org/packages/aws-ssh/
+3. For other Linux distributions grab either .deb or .rpm from GitHub releases https://github.com/springload/aws-ssh/releases
+4. Otherwise, just get the binary from the releases as above (one of those .tar.gz files), unpack it and install somewhere in your PATH.
+
+### Quickstart
+
+After the installation, this tool requries AWS CLI access to be configured. To set it up, please refer to the official documentation from AWS.
+
+### EC2 instance configuration tags
+
 There are the following EC2 instance tags that change behaviour:
 
 1. (Deprecated) If a bastion instance has tag "Global" with value "yes", "true" or "1", then aws-ssh will use it for all VPCs. If there are multiple bastion instances, it chooses the instance that has the most common match in name.
@@ -11,7 +24,7 @@ There are the following EC2 instance tags that change behaviour:
 3. "x-aws-ssh-user" - sets the ssh username in the config.
 4. "x-aws-ssh-port" - sets the ssh port in the config.
 
-### Utilise ec2 connect feature
+### Use ec2 connect feature to SSH to instances without managing SSH keys.
 
 If your AWS EC2 instances are set up for ec2 connect and your AWS user has appropriate IAM policies, aws-ssh can connect to the instance straight away.
 
@@ -23,7 +36,7 @@ There are certain prerequisites:
 4. But it's boring to look up the instance id every time so you can run `aws-ssh update` to generate cache of all EC2 instances across all available AWS profiles
 5. Then just run `aws-ssh connect` to search for the right instance and press "Enter"
 
-### Utilise reconf feature
+### Use reconf feature
 
 Instead of using EC2 connect, one can have their ssh keys directly on the instances, so for those cases there is `aws-ssh reconf` command which just generates ssh config to be included in the main one.
 
@@ -74,7 +87,7 @@ For example:
 
 Basically, take any flag, add `AWS_SSH_` prefix, uppercase it and replace "-" with "\_".
 
-### Build
+### Build manually and contribute
 
 You'll need go>=1.16. Note that this project uses `go.mod`, so the project has to be cloned somewhere outside of the `GOPATH` directory.
 Or just use provided `Dockerfile`.
