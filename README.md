@@ -14,15 +14,7 @@ IP addresses of ec2 instances. It also detects so-called "bastion" instances.
 ### Quickstart
 
 After the installation, this tool requries AWS CLI access to be configured. To set it up, please refer to the official documentation from AWS.
-
-### EC2 instance configuration tags
-
-There are the following EC2 instance tags that change behaviour:
-
-1. (Deprecated) If a bastion instance has tag "Global" with value "yes", "true" or "1", then aws-ssh will use it for all VPCs. If there are multiple bastion instances, it chooses the instance that has the most common match in name.
-2. "x-aws-ssh-global" - same as the above
-3. "x-aws-ssh-user" - sets the ssh username in the config.
-4. "x-aws-ssh-port" - sets the ssh port in the config.
+After you have at least one AWS profile configured, run `aws-ssh test` to see that everything is working correctly.
 
 ### Use ec2 connect feature to SSH to instances without managing SSH keys.
 
@@ -40,27 +32,14 @@ There are certain prerequisites:
 
 Instead of using EC2 connect, one can have their ssh keys directly on the instances, so for those cases there is `aws-ssh reconf` command which just generates ssh config to be included in the main one.
 
-### Basic usage
+### EC2 instance configuration tags
 
-```
-Usage:
-  aws-ssh [command]
+There are the following EC2 instance tags that change behaviour:
 
-Available Commands:
-  connect     SSH into the EC2 instance using ec2 connect feature
-  help        Help about any command
-  reconf      Creates a new ssh config
-  test        A brief description of your command
-
-Flags:
-  -d, --debug               Show debug output
-  -h, --help                help for aws-ssh
-  -n, --no-profile-prefix   Do not prefix host names with profile name
-  -p, --profile strings     Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/confi
-      --version           version for aws-ssh
-
-Use "aws-ssh [command] --help" for more information about a command.
-```
+1. (Deprecated) If a bastion instance has tag "Global" with value "yes", "true" or "1", then aws-ssh will use it for all VPCs. If there are multiple bastion instances, it chooses the instance that has the most common match in name.
+2. "x-aws-ssh-global" - same as the above
+3. "x-aws-ssh-user" - sets the ssh username in the config.
+4. "x-aws-ssh-port" - sets the ssh port in the config.
 
 #### Additional ~/.aws/config properties
 
