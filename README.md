@@ -18,7 +18,7 @@ If your AWS EC2 instances are set up for ec2 connect and your AWS user has appro
 There are certain prerequisites:
 
 1. Check `--ssh-config-path` option of "aws-ssh connect". aws-ssh will generate an config for SSH under this path, which will have the instance IP address, user to log under and even config for the bastion hosts. This file will be rewritted on every run of aws-ssh
-2. Include the above file into your ssh config using `Include ec2_connect_config` where `ec2_connect_config` is the filename (or path) as above.
+2. Include the above file into your ssh config (normally `~/.ssh/config`) using `Include ec2_connect_config` where `ec2_connect_config` is the filename (or path) as above.
 3. You can specify AWS profile from your config using `-p` flag and the instance id using `-i` flag.
 4. But it's boring to look up the instance id every time so you can run `aws-ssh update` to generate cache of all EC2 instances across all available AWS profiles
 5. Then just run `aws-ssh connect` to search for the right instance and press "Enter"
