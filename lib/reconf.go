@@ -13,8 +13,7 @@ import (
 func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 	profileSummaries, err := TraverseProfiles(profiles, noProfilePrefix)
 	if err != nil {
-		log.WithError(err).Error("got some errors")
-		return
+		log.WithError(err).Warn("got some errors")
 	}
 
 	var sshEntries []SSHEntry

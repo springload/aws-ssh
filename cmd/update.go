@@ -22,8 +22,7 @@ allowing to automatically fill those values in.
 		cache := cache.NewYAMLCache(viper.GetString("cache-dir"))
 		profileSummaries, err := lib.TraverseProfiles(viper.Get("profilesConfig").([]lib.ProfileConfig), viper.GetBool("no-profile-prefix"))
 		if err != nil {
-			log.WithError(err).Error("got some errors")
-			return
+			log.WithError(err).Warn("got some errors")
 		}
 
 		var sshEntries []lib.SSHEntry
