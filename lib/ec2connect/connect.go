@@ -2,6 +2,7 @@ package ec2connect
 
 import (
 	"aws-ssh/lib"
+	"context"
 
 	"fmt"
 	"net"
@@ -11,10 +12,10 @@ import (
 	"syscall"
 
 	"github.com/apex/log"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2instanceconnect"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ec2instanceconnect"
 	"golang.org/x/crypto/ssh/agent"
 )
 
@@ -97,18 +98,15 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 // and returns the public (or private if public doesn't exist) address of the EC2 instance
 func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, string, error) {
 	ctx := log.WithField("instance_id", instanceID)
-	localSession, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{},
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithSharedConfigProfile(profile))
 
-		SharedConfigState: session.SharedConfigEnable,
-		Profile:           profile,
-	})
 	if err != nil {
 		return "", "", fmt.Errorf("can't get aws session: %s", err)
 	}
-	ec2Svc := ec2.New(localSession)
-	ec2Result, err := ec2Svc.DescribeInstances(&ec2.DescribeInstancesInput{
-		InstanceIds: aws.StringSlice([]string{instanceID}),
+	ec2Svc := ec2.NewFromConfig(cfg)
+	ec2Result, err := ec2Svc.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
+		InstanceIds: []string{instanceID},
 	})
 	if err != nil {
 		return "", "", fmt.Errorf("can't get ec2 instance: %s", err)
@@ -119,7 +117,7 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, s
 	}
 
 	ec2Instance := ec2Result.Reservations[0].Instances[0]
-	ec2ICSvc := ec2instanceconnect.New(localSession)
+	ec2ICSvc := ec2instanceconnect.NewFromConfig(cfg)
 
 	// no username has been provided, so we try to get it fom the instance tag first
 	if instanceUser == "" {
@@ -136,7 +134,7 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, s
 
 	ctx.WithField("user", instanceUser).Info("pushing SSH key...")
 
-	if _, err := ec2ICSvc.SendSSHPublicKey(&ec2instanceconnect.SendSSHPublicKeyInput{
+	if _, err := ec2ICSvc.SendSSHPublicKey(context.TODO(), &ec2instanceconnect.SendSSHPublicKeyInput{
 		InstanceId:       ec2Instance.InstanceId,
 		InstanceOSUser:   aws.String(instanceUser),
 		AvailabilityZone: ec2Instance.Placement.AvailabilityZone,
@@ -144,9 +142,9 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, s
 	}); err != nil {
 		return "", "", fmt.Errorf("can't push ssh key: %s", err)
 	}
-	var address = aws.StringValue(ec2Instance.PrivateIpAddress)
-	if aws.StringValue(ec2Instance.PublicIpAddress) != "" {
-		address = aws.StringValue(ec2Instance.PublicIpAddress)
+	var address = aws.ToString(ec2Instance.PrivateIpAddress)
+	if aws.ToString(ec2Instance.PublicIpAddress) != "" {
+		address = aws.ToString(ec2Instance.PublicIpAddress)
 	}
 	return address, instanceUser, nil
 }

@@ -5,15 +5,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 const bastionCanonicalName = "bastion"
 
 var sanitiser = regexp.MustCompile("[\\s-]+")
 
-func getTagValue(tag string, tags []*ec2.Tag, caseInsensitive ...bool) string {
+func getTagValue(tag string, tags []types.Tag, caseInsensitive ...bool) string {
 	if len(caseInsensitive) > 0 {
 		if caseInsensitive[0] {
 			tag = strings.ToLower(tag)
@@ -21,8 +21,8 @@ func getTagValue(tag string, tags []*ec2.Tag, caseInsensitive ...bool) string {
 	}
 
 	for _, subTag := range tags {
-		if aws.StringValue(subTag.Key) == tag {
-			return aws.StringValue(subTag.Value)
+		if aws.ToString(subTag.Key) == tag {
+			return aws.ToString(subTag.Value)
 		}
 	}
 
@@ -30,31 +30,31 @@ func getTagValue(tag string, tags []*ec2.Tag, caseInsensitive ...bool) string {
 
 }
 
-func getNameFromTags(tags []*ec2.Tag) string {
+func getNameFromTags(tags []types.Tag) string {
 	return strings.ToLower(getTagValue("Name", tags))
 }
 
-func getPortFromTags(tags []*ec2.Tag) string {
+func getPortFromTags(tags []types.Tag) string {
 	return strings.ToLower(getTagValue("x-aws-ssh-port", tags))
 }
 
 // GetUserFromTags gets the ec2 username from tags
-func GetUserFromTags(tags []*ec2.Tag) string {
+func GetUserFromTags(tags []types.Tag) string {
 	return strings.ToLower(getTagValue("x-aws-ssh-user", tags))
 }
 
-func isBastionFromTags(tags []*ec2.Tag, checkGlobal bool) bool {
+func isBastionFromTags(tags []types.Tag, checkGlobal bool) bool {
 	if len(tags) > 0 {
 		var name string
 		var global bool
 
 		for _, tag := range tags {
-			switch aws.StringValue(tag.Key) {
+			switch aws.ToString(tag.Key) {
 			case "Name":
-				name = strings.ToLower(aws.StringValue(tag.Value))
+				name = strings.ToLower(aws.ToString(tag.Value))
 			case "Global", "x-aws-ssh-global":
 				{
-					value := strings.ToLower(aws.StringValue(tag.Value))
+					value := strings.ToLower(aws.ToString(tag.Value))
 					if value == "yes" || value == "true" || value == "1" {
 						global = true
 					}
@@ -85,7 +85,7 @@ func (w weights) Len() int           { return len(w) }
 func (w weights) Less(i, j int) bool { return w[i].Weight < w[j].Weight }
 func (w weights) Swap(i, j int)      { w[i], w[j] = w[j], w[i] }
 
-func findBestBastion(instanceName string, bastions []*ec2.Instance) *ec2.Instance {
+func findBestBastion(instanceName string, bastions []*types.Instance) *types.Instance {
 	// skip instances with bastionCanonicalName in name
 	if !strings.Contains(instanceName, bastionCanonicalName) && len(bastions) > 0 {
 		if len(bastions) == 1 {
@@ -122,11 +122,11 @@ func getInstanceCanonicalName(profile, instanceName, instanceIndex string) strin
 }
 
 func instanceLaunchTimeSorter(i interface{}) interface{} { // sorts by launch time
-	launched := aws.TimeValue(i.(*ec2.Instance).LaunchTime)
+	launched := aws.ToTime(i.(*types.Instance).LaunchTime)
 	return launched.Unix()
 }
 
 func instanceNameSorter(i interface{}) interface{} { // sort by instance name
-	instanceName := getNameFromTags(i.(*ec2.Instance).Tags)
+	instanceName := getNameFromTags(i.(*types.Instance).Tags)
 	return instanceName
 }
