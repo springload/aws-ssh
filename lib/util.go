@@ -85,11 +85,11 @@ func (w weights) Len() int           { return len(w) }
 func (w weights) Less(i, j int) bool { return w[i].Weight < w[j].Weight }
 func (w weights) Swap(i, j int)      { w[i], w[j] = w[j], w[i] }
 
-func findBestBastion(instanceName string, bastions []*types.Instance) *types.Instance {
+func findBestBastion(instanceName string, bastions []types.Instance) *types.Instance {
 	// skip instances with bastionCanonicalName in name
 	if !strings.Contains(instanceName, bastionCanonicalName) && len(bastions) > 0 {
 		if len(bastions) == 1 {
-			return bastions[0]
+			return &bastions[0]
 		}
 
 		var weights weights
@@ -101,7 +101,7 @@ func findBestBastion(instanceName string, bastions []*types.Instance) *types.Ins
 		// sort by weiht
 		sort.Sort(weights)
 		// return the first one
-		return bastions[weights[0].Index]
+		return &bastions[weights[0].Index]
 	}
 
 	return nil
@@ -122,11 +122,11 @@ func getInstanceCanonicalName(profile, instanceName, instanceIndex string) strin
 }
 
 func instanceLaunchTimeSorter(i interface{}) interface{} { // sorts by launch time
-	launched := aws.ToTime(i.(*types.Instance).LaunchTime)
+	launched := aws.ToTime(i.(types.Instance).LaunchTime)
 	return launched.Unix()
 }
 
 func instanceNameSorter(i interface{}) interface{} { // sort by instance name
-	instanceName := getNameFromTags(i.(*types.Instance).Tags)
+	instanceName := getNameFromTags(i.(types.Instance).Tags)
 	return instanceName
 }
