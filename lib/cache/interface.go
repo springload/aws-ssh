@@ -14,4 +14,6 @@ type Cache interface {
 	// If name is empty or there is no exact match,
 	// it switches to the fuzzy search mode
 	Lookup(name string) (lib.SSHEntry, error)
+	// ListCanonicalNames() returns all known canonical host names from the cache
+	ListCanonicalNames() ([]string, error)
 }

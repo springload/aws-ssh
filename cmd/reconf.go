@@ -8,7 +8,10 @@ import (
 )
 
 var reconfCmd = &cobra.Command{
-	Use:   "reconf <filename>",
+	Use: "reconf <filename>",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 	Args:  cobra.ExactArgs(1),
 	Short: "Creates a new ssh config",
 	Long: `Reconfigures your ssh by creating a new config for it. Only one argument is required,

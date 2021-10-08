@@ -9,7 +9,10 @@ import (
 )
 
 var testCmd = &cobra.Command{
-	Use:   "test",
+	Use: "test",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 	Short: "Tests the profiles",
 	Long: `aws-ssh test tests the AWS profiles found in
 ~/.aws/config and ~/.aws/credentials (unless -p option is provided)

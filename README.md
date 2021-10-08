@@ -28,6 +28,17 @@ There are certain prerequisites:
 4. But it's boring to look up the instance id every time so you can run `aws-ssh update` to generate cache of all EC2 instances across all available AWS profiles
 5. Then just run `aws-ssh connect` to search for the right instance and press "Enter"
 
+### ec2 connect with host autocompletion!
+
+You can also use hosts autocompletion! Refer to `aws-ssh completion -h` instructions how to set it up, then run like:
+
+```bash
+$aws-ssh connect -i <TAB>
+# or
+$aws-ssh connect -i profile- <TAB>
+
+```
+
 ### Use reconf feature
 
 Instead of using EC2 connect, one can have their ssh keys directly on the instances, so for those cases there is `aws-ssh reconf` command which just generates ssh config to be included in the main one.

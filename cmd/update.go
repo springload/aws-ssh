@@ -11,7 +11,10 @@ import (
 
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
-	Use:   "update",
+	Use: "update",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 	Short: "Updates cache of ssh entries",
 	Long: `
 Cache is important for sophisticated behaviour of "connect" command,
