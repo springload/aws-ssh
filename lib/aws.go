@@ -73,28 +73,28 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 		linq.From(summary.Instances).OrderBy(instanceNameSorter). // sort by name first
 										ThenBy(instanceLaunchTimeSorter).         // then by launch time
 										GroupBy(func(i interface{}) interface{} { // and then group by vpc
-				vpcID := i.(*types.Instance).VpcId
+				vpcID := i.(types.Instance).VpcId
 				return aws.ToString(vpcID)
 			}, func(i interface{}) interface{} {
-				return i.(*types.Instance)
+				return i.(types.Instance)
 			}).ToSlice(&vpcInstances)
 
-		var commonBastions []*types.Instance
+		var commonBastions []types.Instance
 		linq.From(summary.Instances).OrderBy(instanceNameSorter). // sort by name first
 										ThenBy(instanceLaunchTimeSorter). // then by launch time
 										Where(
 				func(f interface{}) bool {
-					return isBastionFromTags(f.(*types.Instance).Tags, true) // check for global tag as well
+					return isBastionFromTags(f.(types.Instance).Tags, true) // check for global tag as well
 				},
 			).ToSlice(&commonBastions)
 
 		ctx.Debugf("Found %d common (global) bastions", len(commonBastions))
 
 		for _, vpcGroup := range vpcInstances { // take the instances grouped by vpc and iterate
-			var vpcBastions []*types.Instance
+			var vpcBastions []types.Instance
 			linq.From(vpcGroup.Group).Where(
 				func(f interface{}) bool {
-					return isBastionFromTags(f.(*types.Instance).Tags, false) // "false" means don't check for global tag
+					return isBastionFromTags(f.(types.Instance).Tags, false) // "false" means don't check for global tag
 				},
 			).ToSlice(&vpcBastions)
 
@@ -102,10 +102,10 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 
 			var nameInstances []linq.Group
 			linq.From(vpcGroup.Group).GroupBy(func(i interface{}) interface{} { // now group them by name
-				instanceName := getNameFromTags(i.(*types.Instance).Tags)
+				instanceName := getNameFromTags(i.(types.Instance).Tags)
 				return instanceName
 			}, func(i interface{}) interface{} {
-				return i.(*types.Instance)
+				return i.(types.Instance)
 			}).ToSlice(&nameInstances)
 
 			// now we have instances, grouped by vpc and name
@@ -113,7 +113,7 @@ func TraverseProfiles(profiles []ProfileConfig, noProfilePrefix bool) ([]Process
 				instanceName := nameGroup.Key.(string)
 
 				for n, instance := range nameGroup.Group {
-					instance := instance.(*types.Instance)
+					instance := instance.(types.Instance)
 					var entry = SSHEntry{
 						InstanceID: aws.ToString(instance.InstanceId),
 						ProfileConfig: ProfileConfig{
