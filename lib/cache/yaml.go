@@ -168,6 +168,13 @@ func (y *YAMLCache) Lookup(name string) (lib.SSHEntry, error) {
 	return entry, nil
 }
 
+func (y *YAMLCache) ListCanonicalNames() ([]string, error) {
+	if err := y.loadIndex(); err != nil {
+		return []string{}, nil
+	}
+	return y.index.CanonicalNames, nil
+}
+
 func NewYAMLCache(basedir string) Cache {
 
 	return &YAMLCache{basedir: basedir}

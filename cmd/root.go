@@ -18,10 +18,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use: "aws-ssh",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		initConfig()
-	},
+	Use:   "aws-ssh",
 	Short: "Describe your AWS and get ssh config to connect to ec2 instances",
 	Long: `This program goes through all available AWS accounts in parallel and determines
 IP addresses of ec2 instances. It also detects so-called "bastion" instances.
