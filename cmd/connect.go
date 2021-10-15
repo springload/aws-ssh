@@ -109,7 +109,6 @@ func init() {
 		if err != nil {
 			// can happen if there's no cache yet
 			// safe to just ignore it here
-			log.Fatalf("wtf")
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
 	})
