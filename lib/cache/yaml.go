@@ -84,34 +84,37 @@ func (y *YAMLCache) Save(profileSummaries []lib.ProcessedProfileSummary) error {
 	// every ssh entry is self-contained
 	for _, summary := range profileSummaries {
 		for _, sshEntry := range summary.SSHEntries {
-			var fileName = path.Join(instancesPath, fmt.Sprintf("%s.yaml", sshEntry.InstanceID))
-			file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
-			if err != nil {
-				return fmt.Errorf("can't open %s: %s", fileName, err)
-			}
-
-			defer file.Close()
-			encoder := yaml.NewEncoder(file)
-			err = encoder.Encode(&sshEntry)
-			if err != nil {
-				return fmt.Errorf("can't encode %s: %s", fileName, err)
-			}
-			if err := encoder.Close(); err != nil {
-				return fmt.Errorf("can't close %s: %s", fileName, err)
-			}
-
-			// add every instance name to the index and resolve to instance id
-			for n, name := range sshEntry.Names {
-				if name != sshEntry.InstanceID {
-					index[name] = sshEntry.InstanceID
-					// add the first name to canonical names
-					if n == 0 {
-						y.index.CanonicalNames = append(y.index.CanonicalNames, name)
-					}
-				} else {
-					index[name] = ""
+			return func() error {
+				var fileName = path.Join(instancesPath, fmt.Sprintf("%s.yaml", sshEntry.InstanceID))
+				file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
+				if err != nil {
+					return fmt.Errorf("can't open %s: %s", fileName, err)
 				}
-			}
+
+				defer file.Close()
+				encoder := yaml.NewEncoder(file)
+				err = encoder.Encode(&sshEntry)
+				if err != nil {
+					return fmt.Errorf("can't encode %s: %s", fileName, err)
+				}
+				if err := encoder.Close(); err != nil {
+					return fmt.Errorf("can't close %s: %s", fileName, err)
+				}
+
+				// add every instance name to the index and resolve to instance id
+				for n, name := range sshEntry.Names {
+					if name != sshEntry.InstanceID {
+						index[name] = sshEntry.InstanceID
+						// add the first name to canonical names
+						if n == 0 {
+							y.index.CanonicalNames = append(y.index.CanonicalNames, name)
+						}
+					} else {
+						index[name] = ""
+					}
+				}
+				return nil
+			}()
 		}
 	}
 	sort.Strings(y.index.CanonicalNames)
