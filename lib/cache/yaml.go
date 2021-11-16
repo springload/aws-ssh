@@ -84,7 +84,7 @@ func (y *YAMLCache) Save(profileSummaries []lib.ProcessedProfileSummary) error {
 	// every ssh entry is self-contained
 	for _, summary := range profileSummaries {
 		for _, sshEntry := range summary.SSHEntries {
-			return func() error {
+			func() error {
 				var fileName = path.Join(instancesPath, fmt.Sprintf("%s.yaml", sshEntry.InstanceID))
 				file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
 				if err != nil {
