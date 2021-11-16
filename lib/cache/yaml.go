@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/hashicorp/go-multierror"
 	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
 )
 
@@ -81,10 +82,11 @@ func (y *YAMLCache) Save(profileSummaries []lib.ProcessedProfileSummary) error {
 	if err != nil {
 		return err
 	}
+	var errors error
 	// every ssh entry is self-contained
 	for _, summary := range profileSummaries {
 		for _, sshEntry := range summary.SSHEntries {
-			func() error {
+			if err := func() error {
 				var fileName = path.Join(instancesPath, fmt.Sprintf("%s.yaml", sshEntry.InstanceID))
 				file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
 				if err != nil {
@@ -114,8 +116,13 @@ func (y *YAMLCache) Save(profileSummaries []lib.ProcessedProfileSummary) error {
 					}
 				}
 				return nil
-			}()
+			}(); err != nil {
+				errors = multierror.Append(errors, err)
+			}
 		}
+	}
+	if errors != nil {
+		return errors
 	}
 	sort.Strings(y.index.CanonicalNames)
 	y.index.InstancesIndex = index
