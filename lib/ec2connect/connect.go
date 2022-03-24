@@ -26,6 +26,9 @@ const defaultUser = "ec2-user"
 func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) {
 	// get the pub key from the ssh agent first
 	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+	if err != nil {
+		log.WithError(err).Fatal("can't connect to ssh agent, maybe SSH_AUTH_SOCK is unset?")
+	}
 
 	keys, err := agent.NewClient(sshAgent).List()
 	if err != nil || len(keys) < 1 {
