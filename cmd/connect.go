@@ -5,6 +5,7 @@ import (
 	"aws-ssh/lib/cache"
 	"aws-ssh/lib/ec2connect"
 	"path"
+	"strings"
 
 	"github.com/apex/log"
 	homedir "github.com/mitchellh/go-homedir"
@@ -39,11 +40,8 @@ These placeholders are useful when you need to override the ssh command.`,
 		var instanceUser = viper.GetString("user")
 
 		profiles := viper.GetStringSlice("profiles")
-		if len(profiles) > 0 {
+		if len(profiles) > 0 && strings.HasPrefix(instanceID, "i-") {
 			profile = profiles[0]
-			if instanceID == "" {
-				log.Fatalf("--instanceid is required but not set")
-			}
 			ec2connect.ConnectEC2(
 				lib.SSHEntries{
 					&lib.SSHEntry{
@@ -58,7 +56,7 @@ These placeholders are useful when you need to override the ssh command.`,
 			)
 		} else {
 			// ok, profile is not set, switch to mode 2
-			log.Info("no profile has been provided, switching to the cache mode")
+			log.Info("switching to the cache mode")
 			cache := cache.NewYAMLCache(viper.GetString("cache-dir"))
 
 			sshEntry, err := cache.Lookup(instanceID)
@@ -95,6 +93,7 @@ func init() {
 	defaultSSHConfigFile := path.Join(homeDir, ".ssh", "ec2_connect_config")
 
 	connectCmd.Flags().StringP("instanceid", "i", "", "Instance ID to connect to")
+	connectCmd.Flags().StringP("security-group-id", "s", "", "Security group IP to add your IP address to before connecting. If not set, then checks aws-ssh-security-group-id tag on the ec2 instance.")
 
 	connectCmd.Flags().StringP("user", "u", "", "Existing user on the instance")
 	connectCmd.Flags().StringP("ssh-config-path", "c", defaultSSHConfigFile, "Path to the ssh config to generate")
