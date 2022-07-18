@@ -98,16 +98,15 @@ func init() {
 	defaultSSHConfigFile := path.Join(homeDir, ".ssh", "ec2_connect_config")
 
 	connectCmd.Flags().StringP("instanceid", "i", "", "Instance ID to connect to")
-	connectCmd.Flags().StringP("security-group-id", "s", "", "Security group IP to add your IP address to before connecting. If not set, then checks aws-ssh-security-group-id tag on the ec2 instance.")
-
-	connectCmd.Flags().StringP("user", "u", "", "Existing user on the instance")
-	connectCmd.Flags().StringP("ssh-config-path", "c", defaultSSHConfigFile, "Path to the ssh config to generate")
 	connectCmd.Flags().StringP("proxyjump", "j", "", "ProxyJump host to use in the generated ssh config (if there's a bastion proxyjump already this will be added before that)")
+	connectCmd.Flags().StringP("security-group-id", "s", "", "Security group IP to add your IP address to before connecting. If not set, then checks aws-ssh-security-group-id tag on the ec2 instance.")
+	connectCmd.Flags().StringP("ssh-config-path", "c", defaultSSHConfigFile, "Path to the ssh config to generate")
+	connectCmd.Flags().StringP("user", "u", "", "Existing user on the instance")
 
 	viper.BindPFlag("instanceid", connectCmd.Flags().Lookup("instanceid"))
-	viper.BindPFlag("user", connectCmd.Flags().Lookup("user"))
-	viper.BindPFlag("ssh-config-path", connectCmd.Flags().Lookup("ssh-config-path"))
 	viper.BindPFlag("proxyjump", connectCmd.Flags().Lookup("proxyjump"))
+	viper.BindPFlag("ssh-config-path", connectCmd.Flags().Lookup("ssh-config-path"))
+	viper.BindPFlag("user", connectCmd.Flags().Lookup("user"))
 
 	// custom completion for instances
 	connectCmd.RegisterFlagCompletionFunc("instanceid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
