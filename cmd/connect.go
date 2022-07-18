@@ -79,6 +79,11 @@ These placeholders are useful when you need to override the ssh command.`,
 				}
 				log.WithField("instance_id", bastionEntry.InstanceID).Infof("Got bastion %s", bastionEntry.Names[0])
 				sshEntries = append(sshEntries, &bastionEntry)
+			} else {
+				// if ProxyJump is already set we can't just override it,
+				// but if it's empty it means this is the first hop and we can use
+				// the cli-supplied proxyjump flag
+				sshEntry.ProxyJump = viper.GetString("proxyjump")
 			}
 			ec2connect.ConnectEC2(sshEntries, viper.GetString("ssh-config-path"), args)
 		}
@@ -97,9 +102,12 @@ func init() {
 
 	connectCmd.Flags().StringP("user", "u", "", "Existing user on the instance")
 	connectCmd.Flags().StringP("ssh-config-path", "c", defaultSSHConfigFile, "Path to the ssh config to generate")
+	connectCmd.Flags().StringP("proxyjump", "j", "", "ProxyJump host to use in the generated ssh config (if there's a bastion proxyjump already this will be added before that)")
+
 	viper.BindPFlag("instanceid", connectCmd.Flags().Lookup("instanceid"))
 	viper.BindPFlag("user", connectCmd.Flags().Lookup("user"))
 	viper.BindPFlag("ssh-config-path", connectCmd.Flags().Lookup("ssh-config-path"))
+	viper.BindPFlag("proxyjump", connectCmd.Flags().Lookup("proxyjump"))
 
 	// custom completion for instances
 	connectCmd.RegisterFlagCompletionFunc("instanceid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
