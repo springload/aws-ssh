@@ -1,7 +1,9 @@
 package lib
 
 import (
+	"cmp"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -121,12 +123,47 @@ func getInstanceCanonicalName(profile, instanceName, instanceIndex string) strin
 	return sanitiser.ReplaceAllString(strings.Join(parts, "-"), "-")
 }
 
-func instanceLaunchTimeSorter(i interface{}) interface{} { // sorts by launch time
-	launched := aws.ToTime(i.(types.Instance).LaunchTime)
-	return launched.Unix()
+// instanceGroup is a set of instances sharing the same key
+type instanceGroup struct {
+	Key       string
+	Instances []types.Instance
 }
 
-func instanceNameSorter(i interface{}) interface{} { // sort by instance name
-	instanceName := getNameFromTags(i.(types.Instance).Tags)
-	return instanceName
+// sortInstances returns a copy sorted by name, then by launch time
+func sortInstances(instances []types.Instance) []types.Instance {
+	sorted := slices.Clone(instances)
+	slices.SortStableFunc(sorted, func(a, b types.Instance) int {
+		return cmp.Or(
+			cmp.Compare(getNameFromTags(a.Tags), getNameFromTags(b.Tags)),
+			cmp.Compare(aws.ToTime(a.LaunchTime).Unix(), aws.ToTime(b.LaunchTime).Unix()),
+		)
+	})
+	return sorted
+}
+
+// groupInstances groups instances by key, keeping the order in which keys first appear
+func groupInstances(instances []types.Instance, key func(types.Instance) string) []instanceGroup {
+	var groups []instanceGroup
+	position := make(map[string]int)
+	for _, instance := range instances {
+		k := key(instance)
+		n, ok := position[k]
+		if !ok {
+			n = len(groups)
+			position[k] = n
+			groups = append(groups, instanceGroup{Key: k})
+		}
+		groups[n].Instances = append(groups[n].Instances, instance)
+	}
+	return groups
+}
+
+func filterInstances(instances []types.Instance, keep func(types.Instance) bool) []types.Instance {
+	var kept []types.Instance
+	for _, instance := range instances {
+		if keep(instance) {
+			kept = append(kept, instance)
+		}
+	}
+	return kept
 }
