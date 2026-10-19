@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          TEXT="<!subteam^${SLACK_USERGROUP_ID}> govulncheck found a reachable vulnerability in \`ssm-parent\`. <${RUN_URL}|View the run> for details."
+          TEXT="<!subteam^${SLACK_USERGROUP_ID}> govulncheck found a reachable vulnerability in \`aws-ssh\`. <${RUN_URL}|View the run> for details."
 
           curl -sf -X POST https://slack.com/api/chat.postMessage \
             -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
