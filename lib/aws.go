@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"sort"
 
+	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	multierror "github.com/hashicorp/go-multierror"
-	linq "gopkg.in/ahmetb/go-linq.v3"
 )
 
 // profileSummary represents profile summary

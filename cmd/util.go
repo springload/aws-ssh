@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/go-ini/ini"
 	homedir "github.com/mitchellh/go-homedir"
+	"gopkg.in/ini.v1"
 )
 
 // gets profiles. The current Go AWS SDK doesn't have this function, whereas python boto3 has it. Why?
