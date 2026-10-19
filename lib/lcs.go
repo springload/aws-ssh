@@ -27,11 +27,12 @@ func lcs(a, b string) string {
 	// read the substring out from the matrix
 	s := make([]rune, 0, lengths[aLen][bLen])
 	for x, y := aLen, bLen; x != 0 && y != 0; {
-		if lengths[x][y] == lengths[x-1][y] {
+		switch lengths[x][y] {
+		case lengths[x-1][y]:
 			x--
-		} else if lengths[x][y] == lengths[x][y-1] {
+		case lengths[x][y-1]:
 			y--
-		} else {
+		default:
 			s = append(s, arunes[x-1])
 			x--
 			y--

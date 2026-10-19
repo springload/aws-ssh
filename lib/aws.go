@@ -178,7 +178,7 @@ func DescribeProfile(profile ProfileConfig, sum chan profileSummary, errChan cha
 		config.WithSharedConfigProfile(profile.Name))
 
 	if err != nil {
-		errChan <- fmt.Errorf("Couldn't create session for '%s': %s", profile.Name, err)
+		errChan <- fmt.Errorf("couldn't create session for '%s': %s", profile.Name, err)
 		return
 	}
 
@@ -208,15 +208,13 @@ func DescribeProfile(profile ProfileConfig, sum chan profileSummary, errChan cha
 			break
 		} else {
 			for _, reservation := range result.Reservations {
-				for _, instance := range reservation.Instances {
-					profileSummary.Instances = append(profileSummary.Instances, instance)
-				}
+				profileSummary.Instances = append(profileSummary.Instances, reservation.Instances...)
 			}
 		}
 	}
 
 	if err != nil {
-		errChan <- fmt.Errorf("Can't get full information for '%s': %s", profile, err)
+		errChan <- fmt.Errorf("can't get full information for '%s': %s", profile, err)
 	} else {
 		sum <- profileSummary
 	}

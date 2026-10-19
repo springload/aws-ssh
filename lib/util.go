@@ -11,7 +11,7 @@ import (
 
 const bastionCanonicalName = "bastion"
 
-var sanitiser = regexp.MustCompile("[\\s-]+")
+var sanitiser = regexp.MustCompile(`[\s-]+`)
 
 func getTagValue(tag string, tags []types.Tag, caseInsensitive ...bool) string {
 	if len(caseInsensitive) > 0 {

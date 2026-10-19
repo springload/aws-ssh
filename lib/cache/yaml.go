@@ -29,14 +29,14 @@ type YAMLCacheIndex struct {
 
 func (y *YAMLCache) saveIndex() error {
 	// save index
-	var indexFileName = path.Join(y.basedir, fmt.Sprintf("index.yaml"))
+	var indexFileName = path.Join(y.basedir, "index.yaml")
 
 	indexFile, err := os.OpenFile(indexFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("can't open %s: %s", indexFileName, err)
 	}
 
-	defer indexFile.Close()
+	defer func() { _ = indexFile.Close() }()
 	encoder := yaml.NewEncoder(indexFile)
 	err = encoder.Encode(&y.index)
 	if err != nil {
@@ -54,7 +54,7 @@ func (y *YAMLCache) loadIndex() error {
 		return nil
 	}
 	// load index
-	var indexFileName = path.Join(y.basedir, fmt.Sprintf("index.yaml"))
+	var indexFileName = path.Join(y.basedir, "index.yaml")
 	indexFile, err := os.OpenFile(indexFileName, os.O_RDONLY, 0644)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -63,7 +63,7 @@ func (y *YAMLCache) loadIndex() error {
 		return fmt.Errorf("can't open %s: %s", indexFileName, err)
 	}
 
-	defer indexFile.Close()
+	defer func() { _ = indexFile.Close() }()
 	decoder := yaml.NewDecoder(indexFile)
 	err = decoder.Decode(&y.index)
 	if err != nil {
@@ -93,7 +93,7 @@ func (y *YAMLCache) Save(profileSummaries []lib.ProcessedProfileSummary) error {
 					return fmt.Errorf("can't open %s: %s", fileName, err)
 				}
 
-				defer file.Close()
+				defer func() { _ = file.Close() }()
 				encoder := yaml.NewEncoder(file)
 				err = encoder.Encode(&sshEntry)
 				if err != nil {
@@ -143,7 +143,7 @@ func (y *YAMLCache) Lookup(name string) (lib.SSHEntry, error) {
 			return entry, fmt.Errorf("no names in index, try \"aws-ssh update\"")
 		}
 		idx, err := fuzzyfinder.Find(y.index.CanonicalNames, func(i int) string {
-			return fmt.Sprintf("%s", y.index.CanonicalNames[i])
+			return y.index.CanonicalNames[i]
 		})
 		if err == fuzzyfinder.ErrAbort {
 			return entry, fmt.Errorf("nothing was selected in fuzzy match")
@@ -168,7 +168,7 @@ func (y *YAMLCache) Lookup(name string) (lib.SSHEntry, error) {
 		return entry, fmt.Errorf("can't open %s: %s", fileName, err)
 	}
 
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(&entry)
 	if err != nil {

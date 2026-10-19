@@ -116,7 +116,7 @@ func pushEC2Connect(profile, instanceID, instanceUser, pubKey string) (string, s
 	}
 
 	if len(ec2Result.Reservations) == 0 || len(ec2Result.Reservations[0].Instances) == 0 {
-		return "", "", fmt.Errorf("Couldn't find the instance %s", instanceID)
+		return "", "", fmt.Errorf("couldn't find the instance %s", instanceID)
 	}
 
 	ec2Instance := ec2Result.Reservations[0].Instances[0]
