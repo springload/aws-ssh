@@ -1,29 +1,25 @@
 name: Build and publish aws-ssh
 on:
-  push:
-    tags:
-      - '*'
+  release:
+    types: [published]
+
 jobs:
-  build_and_deploy:
-    name: build and deploy aws-ssh
+  build_and_publish:
+    name: build and publish aws-ssh
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
-      -
-        name: Unshallow to restore tags
-        run: git fetch --prune --unshallow
-      -
-        name: Set up Go
-        uses: actions/setup-go@v1
+      - name: checkout
+        uses: actions/checkout@v7
         with:
-          go-version: 1.17.x
-      -
-        name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+          fetch-depth: 0 # needed for tags
+      - name: set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: 1.27.x
+      - name: run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
-          args: release --rm-dist
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
