@@ -28,6 +28,12 @@
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true
+    },
+    {
+      "description": "yaml.v2 works fine, v3 is not needed",
+      "matchPackageNames": ["gopkg.in/yaml.v2"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ],
   "vulnerabilityAlerts": {
