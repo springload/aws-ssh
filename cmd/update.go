@@ -28,13 +28,6 @@ allowing to automatically fill those values in.
 			log.WithError(err).Warn("got some errors")
 		}
 
-		var sshEntries []lib.SSHEntry
-
-		// go through all profileSummaries and
-		// create sshEntries out of it
-		for _, summary := range profileSummaries {
-			sshEntries = append(sshEntries, summary.SSHEntries...)
-		}
 		if err := cache.Save(profileSummaries); err != nil {
 			log.WithError(err).Fatal("couldn't save cache")
 

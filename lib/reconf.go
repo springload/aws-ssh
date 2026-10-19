@@ -2,7 +2,6 @@ package lib
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -24,7 +23,7 @@ func Reconf(profiles []ProfileConfig, filename string, noProfilePrefix bool) {
 		sshEntries = append(sshEntries, summary.SSHEntries...)
 	}
 
-	tmpfile, err := ioutil.TempFile(path.Dir(filename), "aws-ssh")
+	tmpfile, err := os.CreateTemp(path.Dir(filename), "aws-ssh")
 	ctx := log.WithField("tmpfile", tmpfile.Name())
 	if err != nil {
 		ctx.WithError(err).Fatal("Couldn't create a temporary file")

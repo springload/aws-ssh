@@ -24,7 +24,7 @@ func (e SSHEntries) SaveConfig(path string) error {
 	if err != nil {
 		return fmt.Errorf("can't open file for writing: %s", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	for _, entry := range e {
 		if _, err := io.WriteString(file, entry.ConfigFormat()); err != nil {
 			return fmt.Errorf("can't write to file: %s", err)

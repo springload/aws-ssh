@@ -103,21 +103,18 @@ func init() {
 	connectCmd.Flags().StringP("ssh-config-path", "c", defaultSSHConfigFile, "Path to the ssh config to generate")
 	connectCmd.Flags().StringP("user", "u", "", "Existing user on the instance")
 
-	viper.BindPFlag("instanceid", connectCmd.Flags().Lookup("instanceid"))
-	viper.BindPFlag("proxyjump", connectCmd.Flags().Lookup("proxyjump"))
-	viper.BindPFlag("ssh-config-path", connectCmd.Flags().Lookup("ssh-config-path"))
-	viper.BindPFlag("user", connectCmd.Flags().Lookup("user"))
+	cobra.CheckErr(viper.BindPFlag("instanceid", connectCmd.Flags().Lookup("instanceid")))
+	cobra.CheckErr(viper.BindPFlag("proxyjump", connectCmd.Flags().Lookup("proxyjump")))
+	cobra.CheckErr(viper.BindPFlag("ssh-config-path", connectCmd.Flags().Lookup("ssh-config-path")))
+	cobra.CheckErr(viper.BindPFlag("user", connectCmd.Flags().Lookup("user")))
 
 	// custom completion for instances
-	connectCmd.RegisterFlagCompletionFunc("instanceid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cobra.CheckErr(connectCmd.RegisterFlagCompletionFunc("instanceid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		cache := cache.NewYAMLCache(viper.GetString("cache-dir"))
-		names, err := cache.ListCanonicalNames()
-		if err != nil {
-			// can happen if there's no cache yet
-			// safe to just ignore it here
-		}
+		// the error is expected if there's no cache yet, safe to ignore
+		names, _ := cache.ListCanonicalNames()
 		return names, cobra.ShellCompDirectiveNoFileComp
-	})
+	}))
 
 	rootCmd.AddCommand(connectCmd)
 }

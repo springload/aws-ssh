@@ -14,8 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "aws-ssh",
@@ -58,10 +56,10 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceP("profile", "p", []string{}, "Profiles to query. Can be specified multiple times. If not specified, goes through all profiles in ~/.aws/config and ~/.aws/credentials")
 	rootCmd.PersistentFlags().StringP("cache-dir", "", defaultCacheDir, "Cache dir, which is used by \"update\" and \"connect\" commands")
 
-	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("no-profile-prefix", rootCmd.PersistentFlags().Lookup("no-profile-prefix"))
-	viper.BindPFlag("profiles", rootCmd.PersistentFlags().Lookup("profile"))
-	viper.BindPFlag("cache-dir", rootCmd.PersistentFlags().Lookup("cache-dir"))
+	cobra.CheckErr(viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")))
+	cobra.CheckErr(viper.BindPFlag("no-profile-prefix", rootCmd.PersistentFlags().Lookup("no-profile-prefix")))
+	cobra.CheckErr(viper.BindPFlag("profiles", rootCmd.PersistentFlags().Lookup("profile")))
+	cobra.CheckErr(viper.BindPFlag("cache-dir", rootCmd.PersistentFlags().Lookup("cache-dir")))
 
 	viper.SetEnvPrefix("aws_ssh") // will be uppercased
 
