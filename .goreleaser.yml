@@ -1,6 +1,9 @@
 # .goreleaser.yml
+version: 2
 builds:
   - binary: aws-ssh
+    env:
+      - CGO_ENABLED=0
     goos:
       - darwin
       - linux
@@ -20,7 +23,7 @@ nfpms:
 
 brews:
   - name: aws-ssh
-    tap:
+    repository:
       owner: springload
       name: homebrew-tools
-    folder: Formula
+    directory: Formula
