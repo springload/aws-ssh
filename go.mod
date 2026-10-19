@@ -2,18 +2,18 @@ module aws-ssh
 
 require (
 	github.com/apex/log v1.9.0
-	github.com/aws/aws-sdk-go-v2 v1.9.1
-	github.com/aws/aws-sdk-go-v2/config v1.8.2
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.18.0
-	github.com/aws/aws-sdk-go-v2/service/ec2instanceconnect v1.5.1
-	github.com/go-ini/ini v1.48.0
+	github.com/aws/aws-sdk-go-v2 v1.47.3
+	github.com/aws/aws-sdk-go-v2/config v1.33.9
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.339.0
+	github.com/aws/aws-sdk-go-v2/service/ec2instanceconnect v1.44.1
+	github.com/go-ini/ini v1.67.3
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/ktr0731/go-fuzzyfinder v0.4.0
+	github.com/ktr0731/go-fuzzyfinder v0.9.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/spf13/cobra v1.2.1
-	github.com/spf13/viper v1.8.1
-	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
-	gopkg.in/ahmetb/go-linq.v3 v3.0.0
+	github.com/spf13/cobra v1.10.2
+	github.com/spf13/viper v1.21.0
+	golang.org/x/crypto v0.58.0
+	gopkg.in/ahmetb/go-linq.v3 v3.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
