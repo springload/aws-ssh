@@ -4,7 +4,7 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.339.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.340.0
 	github.com/aws/aws-sdk-go-v2/service/ec2instanceconnect v1.44.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ktr0731/go-fuzzyfinder v0.9.0
