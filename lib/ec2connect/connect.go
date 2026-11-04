@@ -3,12 +3,13 @@ package ec2connect
 import (
 	"aws-ssh/lib"
 	"context"
-
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/apex/log"
@@ -36,25 +37,8 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 	}
 	pubkey := keys[0].String()
 
-	// push the pub key to those instances one after each other
-	// TODO: maybe make it parallel
-	for _, sshEntry := range sshEntries {
-		var instanceName = sshEntry.InstanceID
-		if len(sshEntry.Names) > 0 {
-			instanceName = sshEntry.Names[0]
-		}
-		log.WithField("instance", instanceName).Info("trying to do ec2 connect...")
-		instanceIPAddress, instanceUser, err := pushEC2Connect(sshEntry.ProfileConfig.Name, sshEntry.InstanceID, sshEntry.User, pubkey)
-		if err != nil {
-			log.WithError(err).Fatal("can't push ssh key to the instance")
-		}
-		// if the address is empty we set to the value we got from ec2 connect push
-		if sshEntry.Address == "" {
-			sshEntry.Address = instanceIPAddress
-		}
-		if sshEntry.User == "" {
-			sshEntry.User = instanceUser
-		}
+	if err := pushKeys(sshEntries, pubkey, pushEC2Connect); err != nil {
+		log.WithError(err).Fatal("can't push ssh key to the instance")
 	}
 
 	// then generate ssh config for all instances in sshEntries
@@ -95,6 +79,42 @@ func ConnectEC2(sshEntries lib.SSHEntries, sshConfigPath string, args []string) 
 	if err := syscall.Exec(command, newArgs, os.Environ()); err != nil {
 		log.WithFields(log.Fields{"command": command}).WithError(err).Fatal("can't run the command")
 	}
+}
+
+type pushFunc func(profile, instanceID, instanceUser, pubKey string) (string, string, error)
+
+func entryName(e *lib.SSHEntry) string {
+	if len(e.Names) > 0 {
+		return e.Names[0]
+	}
+	return e.InstanceID
+}
+
+// pushKeys pushes the key to every entry in parallel, as pushed keys only live for 60s,
+// and fills in any missing address/user.
+func pushKeys(sshEntries lib.SSHEntries, pubkey string, push pushFunc) error {
+	errs := make([]error, len(sshEntries))
+	var wg sync.WaitGroup
+	for i, sshEntry := range sshEntries {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			log.WithField("instance", entryName(sshEntry)).Info("trying to do ec2 connect...")
+			address, user, err := push(sshEntry.ProfileConfig.Name, sshEntry.InstanceID, sshEntry.User, pubkey)
+			if err != nil {
+				errs[i] = fmt.Errorf("%s: %w", entryName(sshEntry), err)
+				return
+			}
+			if sshEntry.Address == "" {
+				sshEntry.Address = address
+			}
+			if sshEntry.User == "" {
+				sshEntry.User = user
+			}
+		}()
+	}
+	wg.Wait()
+	return errors.Join(errs...)
 }
 
 // pushEC2Connect pushes the ssh key to a given profile and instance ID
